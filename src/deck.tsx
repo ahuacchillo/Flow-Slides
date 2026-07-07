@@ -108,7 +108,7 @@ export function Deck({ id, video, children }: { id: string; video?: string; chil
   }, []);
 
   return (
-    <div className="deck">
+    <div className="deck" data-deck={id}>
       {video != null && <VideoBackground src={video} />}
       <div className="blobs" aria-hidden>
         <i /><i /><i />

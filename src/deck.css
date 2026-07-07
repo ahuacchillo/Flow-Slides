@@ -49,6 +49,55 @@
   background: linear-gradient(180deg, rgba(10, 7, 17, 0.4), rgba(10, 7, 17, 0.12) 40%, rgba(10, 7, 17, 0.5));
 }
 
+/* ── Grade Concorde — SOLO deck "fondo" (no toca ética) ──────────────────── */
+[data-deck="fondo"] .video-bg video {
+  filter: saturate(0.85) contrast(1.08) brightness(0.88);
+}
+[data-deck="fondo"] .video-veil {
+  background:
+    /* bruma lila: levanta los negros para quitar el gloss plástico */
+    linear-gradient(160deg, rgba(207, 186, 255, 0.07), rgba(174, 142, 255, 0.04) 50%, rgba(251, 196, 125, 0.05)),
+    linear-gradient(180deg, rgba(10, 7, 17, 0.55), rgba(10, 7, 17, 0.28) 40%, rgba(10, 7, 17, 0.62));
+}
+/* Grade de color: hue/sat de la paleta Concorde, luminancia del video */
+[data-deck="fondo"] .video-veil::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* color-mix con gris = mismo hue de marca, menos chroma — evita el look plástico */
+  background:
+    radial-gradient(80vmax 60vmax at 96% 55%, color-mix(in oklch, var(--amber) 72%, #808080), transparent 42%),
+    radial-gradient(70vmax 55vmax at 28% 12%, color-mix(in oklch, var(--lilac-soft) 62%, #808080), transparent 55%),
+    linear-gradient(120deg,
+      color-mix(in oklch, var(--purple-900) 75%, #808080),
+      color-mix(in oklch, var(--purple-900) 62%, #808080) 45%,
+      color-mix(in oklch, var(--purple-700) 55%, #808080) 72%,
+      color-mix(in oklch, var(--purple-500) 58%, #808080));
+  mix-blend-mode: color;
+}
+/* Luz y profundidad: brillos lila, calor ámbar y viñeta suave */
+[data-deck="fondo"] .video-veil::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60vmax 45vmax at 28% 14%, rgba(207, 186, 255, 0.38), transparent 60%),
+    radial-gradient(70vmax 60vmax at 100% 58%, rgba(255, 150, 57, 0.3), transparent 55%),
+    radial-gradient(130% 130% at 50% 45%, transparent 48%, rgba(10, 7, 17, 0.75) 100%);
+  mix-blend-mode: soft-light;
+}
+/* Vidrio más suave para este deck: menos blur, relieve más discreto */
+[data-deck="fondo"] .glass {
+  border-color: rgba(255, 255, 255, 0.09);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012) 45%, transparent);
+  -webkit-backdrop-filter: blur(5px) saturate(118%);
+  backdrop-filter: blur(5px) saturate(118%);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+
 /* Blobs líquidos detrás del vidrio */
 .blobs {
   position: absolute;

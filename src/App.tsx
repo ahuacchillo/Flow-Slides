@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { VideoBackground, Wordmark } from "./deck";
 import EticaDeck from "./decks/etica";
+import FondoDeck from "./decks/fondo";
 
 const DECKS = [
   {
@@ -10,6 +11,13 @@ const DECKS = [
     desc: "Código de ética y cultura Subastop: integridad, riesgos, canal ético y compromiso.",
     count: 12,
     Component: EticaDeck,
+  },
+  {
+    id: "fondo",
+    title: "Fondo",
+    desc: "Background líquido con grade Concorde y slide glass de ejemplo.",
+    count: 1,
+    Component: FondoDeck,
   },
   // ponytail: nueva presentación = nuevo archivo en src/decks/ + una entrada aquí
 ];
