@@ -210,35 +210,67 @@ function SharedVideoPlayer({
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * El Deck original no expone su índice activo.
- * Sincronizamos leyendo el hash de la URL (que el Deck actualiza en cada nav).
- * Así no modificamos deck.tsx y mantenemos la compatibilidad.
+ * Detector del slide activo en el DOM.
+ * Como el Deck original gestiona su propio estado interno silenciosamente,
+ * este componente observa si el wrapper padre recibe la clase "active"
+ * para notificar el índice actual del slide.
  */
-function useCurrentSlideIndex(total: number): number {
-  const [idx, setIdx] = useState(() => {
-    const h = parseInt(window.location.hash.split("/")[2] ?? "", 10);
-    return Number.isFinite(h) && h >= 1 && h <= total ? h - 1 : 0;
-  });
+function ActiveSlideDetector({
+  index,
+  onActive,
+}: {
+  index: number;
+  onActive: (idx: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onHash = () => {
-      const h = parseInt(window.location.hash.split("/")[2] ?? "", 10);
-      if (Number.isFinite(h) && h >= 1 && h <= total) setIdx(h - 1);
-    };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, [total]);
+    const el = ref.current;
+    if (!el) return;
 
-  return idx;
+    const parent = el.parentElement;
+    if (!parent) return;
+
+    // Verificar si ya está activo inicialmente
+    if (parent.classList.contains("active")) {
+      onActive(index);
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "class"
+        ) {
+          if (parent.classList.contains("active")) {
+            onActive(index);
+          }
+        }
+      });
+    });
+
+    observer.observe(parent, { attributes: true, attributeFilter: ["class"] });
+
+    return () => observer.disconnect();
+  }, [index, onActive]);
+
+  return <div ref={ref} style={{ display: "none" }} aria-hidden />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 4. COMPONENTES DE SLIDE — sin VideoBackground propio
 // ═══════════════════════════════════════════════════════════════════════════
 
-function PBRSlide() {
+function PBRSlide({
+  index,
+  onActive,
+}: {
+  index: number;
+  onActive: (idx: number) => void;
+}) {
   return (
     <div className="bg-slide" data-bg="pbr-grade">
+      <ActiveSlideDetector index={index} onActive={onActive} />
       <div className="vc-content">
         <span className="fondo-eyebrow">flow³ · 00 / 20 · PBR</span>
         <h1 className="vc-title">
@@ -264,10 +296,19 @@ function PBRSlide() {
   );
 }
 
-function Flow3Slide({ slide }: { slide: (typeof SLIDES)[number] }) {
+function Flow3Slide({
+  slide,
+  index,
+  onActive,
+}: {
+  slide: (typeof SLIDES)[number];
+  index: number;
+  onActive: (idx: number) => void;
+}) {
   return (
     // CSS containment: el navegador puede saltar el layout/paint de slides no visibles
     <div className="bg-slide flow3-slide" data-bg="video-catalog" style={{ contain: "strict" }}>
+      <ActiveSlideDetector index={index} onActive={onActive} />
       {/* Sin VideoBackground aquí — el SharedVideoPlayer se encarga */}
       <div className="vc-veil" aria-hidden />
       <span className="vc-ghost" aria-hidden>{slide.num}</span>
@@ -292,8 +333,8 @@ function Flow3Slide({ slide }: { slide: (typeof SLIDES)[number] }) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function FondoDeck() {
+  const [activeIdx, setActiveIdx] = useState(0);
   const total = SLIDES.length;
-  const activeIdx = useCurrentSlideIndex(total);
 
   const currentUrl = useMemo(() => SLIDES[activeIdx].video, [activeIdx]);
   const nextUrl    = useMemo(
@@ -308,19 +349,12 @@ export default function FondoDeck() {
         NO pasamos `video` prop — el SharedVideoPlayer reemplaza al VideoBackground.
       */}
       <Deck id="fondo">
-        {/*
-          SharedVideoPlayer se renderiza como primer slide (slot 0 del Deck).
-          Pero el Deck lo trataría como un slide más y haría crossfade de él.
-          En cambio lo sacamos FUERA del Deck y lo montamos como sibling
-          usando un portal o posicionamiento absoluto.
-          
-          NOTA: Como no podemos renderizar fuera del Deck fácilmente sin modificarlo,
-          usamos el truco de montarlo como primer hijo vacío y añadimos el player
-          vía CSS position:fixed scoped al data-deck="fondo".
-          El player real se monta como overlay del wrapper de abajo.
-        */}
         {SLIDES.map((s, i) =>
-          i === 0 ? <PBRSlide key="pbr" /> : <Flow3Slide key={s.num} slide={s} />
+          i === 0 ? (
+            <PBRSlide key="pbr" index={i} onActive={setActiveIdx} />
+          ) : (
+            <Flow3Slide key={s.num} slide={s} index={i} onActive={setActiveIdx} />
+          )
         )}
       </Deck>
 
