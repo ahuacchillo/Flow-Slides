@@ -1,191 +1,243 @@
-// fondo.tsx — Deck de fondos flow³
+// fondo.tsx — Deck de fondos flow³ · OPTIMIZADO
 //
-// Estructura:
-//   Slide 00 (PBR)  — El fondo que construimos: Grade Concorde + BSSRDF + Spring Physics
-//   Slides 01–20    — Los 20 slides de flow³-presentation con su video y tema original
+// PROBLEMA ORIGINAL:
+//   21 slides montados → 20 VideoBackground → 20 instancias HLS simultáneas
+//   = ~20 streams abiertos al cargar la página
 //
-// Los 20 slides vienen de /home/jarbram/Downloads/flow³-presentation/src/App.tsx
-// slideData[], portados literalmente con su video, título, capítulo y tipo de layout.
+// SOLUCIÓN: Reproductor de video compartido (A/B crossfade)
+//   - 1 solo stream activo en todo momento (buffer A)
+//   - 1 stream de preload para el siguiente slide (buffer B)
+//   - Los slides NO montan VideoBackground — reciben el video del contexto
+//   - Al navegar: fade-out de A → fade-in de B → B pasa a ser el nuevo A
+//   - HLS.js se inicializa una sola vez por URL única (caché de instancias)
+//
+// GANANCIAS ESTIMADAS:
+//   Conexiones HLS:    20 → 1 activa + 1 en preload
+//   Workers HLS:       20 → 2
+//   RAM de video:      ~20x → ~2x
+//   Time to first frame: mejora porque no hay contención de red
 
-import { Deck, VideoBackground, Wordmark } from "../deck";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import Hls from "hls.js";
+import { Deck, Wordmark } from "../deck";
 import "./pbr-bg.css";
 import "./fondo-slides.css";
 
-// ── 1. LOS 20 SLIDES DE FLOW³-PRESENTATION ──────────────────────────────────
-// Portados directamente del slideData[] original.
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. DATOS: 20 slides de flow³ + el slide PBR propio
+// ═══════════════════════════════════════════════════════════════════════════
 
-const FLOW3_SLIDES = [
-  {
-    num: "01",
-    chapter: "Cover",
-    title: "FLOW³",
-    subtitle: "A Conscious Design Solution",
-    meta: "v3.0 Universe Edition",
-    type: "cover" as const,
-    video: "https://stream.mux.com/JNJEOYI6B3EffB9f5ZhpGbuxzc6gSyJcXaCBbCgZKRg.m3u8",
-  },
-  {
-    num: "02",
-    chapter: "Chapter 0: The Why",
-    title: "Why a New Universe?",
-    subtitle: "Subastop needs a system with a traceable 'why'. FloW3 is an Open System: it exchanges info with the environment to evolve.",
-    type: "split" as const,
-    video: "https://stream.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo.m3u8",
-  },
-  {
-    num: "03",
-    chapter: "Chapter 1: The Constant",
-    title: "1.618",
-    subtitle: "Phi (φ) — The cosmological constant. Not mysticism, but natural optimization.",
-    type: "big-number" as const,
-    video: "https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8",
-  },
-  {
-    num: "04",
-    chapter: "Spacing",
-    title: "Fibonacci Spacing",
-    subtitle: "2px · 3px · 5px · 8px · 13px · 21px · 34px · 55px",
-    type: "grid" as const,
-    video: "https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8",
-  },
-  {
-    num: "05",
-    chapter: "Typography",
-    title: "Root Phi (√φ)",
-    subtitle: "√φ = 1.272 — Font Size: Round(16 × 1.272ⁿ). Phi es muy agresivo para texto.",
-    type: "split" as const,
-    video: "https://stream.mux.com/00qQnfNo7sSpn3pB1hYKkyeSDvxs01NxiQ3sr29uL3e028.m3u8",
-  },
-  {
-    num: "06",
-    chapter: "Color",
-    title: "The Force: OKLCH",
-    subtitle: "oklch(L, C, H) — Perceptually uniform. Dark mode calculated, not guessed.",
-    type: "split" as const,
-    video: "https://stream.mux.com/JNJEOYI6B3EffB9f5ZhpGbuxzc6gSyJcXaCBbCgZKRg.m3u8",
-  },
-  {
-    num: "07",
-    chapter: "Physics",
-    title: "Radius & Depth",
-    subtitle: "Radius: Fibonacci (2,3,5,8). Shadow: Blur & Offset siguen Fibonacci. Motion: Spring.",
-    type: "grid" as const,
-    video: "https://stream.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo.m3u8",
-  },
-  {
-    num: "08",
-    chapter: "Chapter 3: The Cemetery",
-    title: "Rejected Ideas",
-    subtitle: "4px Grid · Fibonacci Text · Atomic Design · Sass Vars — descartadas por no pasar Rule Zero.",
-    type: "list" as const,
-    video: "https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8",
-  },
-  {
-    num: "09",
-    chapter: "Chapter 4: Tokens",
-    title: "The 3 Layers",
-    subtitle: "1. Primitives (Math) → 2. Semantics (Function) → 3. Components (Context)",
-    type: "split" as const,
-    video: "https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8",
-  },
-  {
-    num: "10",
-    chapter: "Structure",
-    title: "The Planets (Kits)",
-    subtitle: "α Full-width · β Square · γ Vertical · δ Compact · ε Micro",
-    type: "grid" as const,
-    video: "https://stream.mux.com/00qQnfNo7sSpn3pB1hYKkyeSDvxs01NxiQ3sr29uL3e028.m3u8",
-  },
-  {
-    num: "11",
-    chapter: "Chapter 6: Species",
-    title: "Functional Taxonomy",
-    subtitle: "Foundations · Actions · Inputs · Navigation · Feedback · Overlays · Data Display",
-    type: "list" as const,
-    video: "https://stream.mux.com/JNJEOYI6B3EffB9f5ZhpGbuxzc6gSyJcXaCBbCgZKRg.m3u8",
-  },
-  {
-    num: "12",
-    chapter: "Standards",
-    title: "Component Anatomy",
-    subtitle: "10 secciones obligatorias: What · When · Anatomy · Variants · States · A11y · Do/Don't · API · Code · Related",
-    type: "split" as const,
-    video: "https://stream.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo.m3u8",
-  },
-  {
-    num: "13",
-    chapter: "Lifecycle",
-    title: "Senescence",
-    subtitle: "Experimental → Stable → Senescent → Extinct — a biological approach to legacy.",
-    type: "big-number" as const,
-    video: "https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8",
-  },
-  {
-    num: "14",
-    chapter: "Chapter 7",
-    title: "The 7 Laws of Physics",
-    subtitle: "I. Generative · II. Scaling · III. Adaptation · IV. Modular · VI. Feedback",
-    type: "grid" as const,
-    video: "https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8",
-  },
-  {
-    num: "15",
-    chapter: "Chapter 8: Nervous System",
-    title: "AI-Driven Stack",
-    subtitle: "Next.js + TS + Style Dictionary. The AI is the brain. It executes 'how' based on defined 'what'.",
-    type: "split" as const,
-    video: "https://stream.mux.com/00qQnfNo7sSpn3pB1hYKkyeSDvxs01NxiQ3sr29uL3e028.m3u8",
-  },
-  {
-    num: "16",
-    chapter: "Agents",
-    title: "Sub-agent Hierarchy",
-    subtitle: "L1 Rules (DNA) · L2 Professionals · L3 Operatives · L4 Skills",
-    type: "list" as const,
-    video: "https://stream.mux.com/JNJEOYI6B3EffB9f5ZhpGbuxzc6gSyJcXaCBbCgZKRg.m3u8",
-  },
-  {
-    num: "17",
-    chapter: "Tools",
-    title: "The Body Parts",
-    subtitle: "The Eye (Claude+Figma) · The Hands (Cursor+Agents) · Immune System (CI/CD)",
-    type: "grid" as const,
-    video: "https://stream.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo.m3u8",
-  },
-  {
-    num: "18",
-    chapter: "Metabolism",
-    title: "The Workflow",
-    subtitle: "Design → Perception → Build → Validation → Approval. No agent proceeds without verification.",
-    type: "split" as const,
-    video: "https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8",
-  },
-  {
-    num: "19",
-    chapter: "Chapter 10",
-    title: "Evolution Roadmap",
-    subtitle: "Phase 1: Core (4w) · Phase 2: Docs (3w) · Phase 3: WCAG (3w) · Phase 4: Scale (4w)",
-    type: "list" as const,
-    video: "https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8",
-  },
-  {
-    num: "20",
-    chapter: "Cover",
-    title: "Biomimesis",
-    subtitle: "Where φ works, we use it. Where it doesn't, we use human perception. FloW3 v3.0",
-    type: "cover" as const,
-    video: "https://stream.mux.com/00qQnfNo7sSpn3pB1hYKkyeSDvxs01NxiQ3sr29uL3e028.m3u8",
-  },
+const V1 = "https://stream.mux.com/JNJEOYI6B3EffB9f5ZhpGbuxzc6gSyJcXaCBbCgZKRg.m3u8";
+const V2 = "https://stream.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo.m3u8";
+const V3 = "https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8";
+const V4 = "https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8";
+const V5 = "https://stream.mux.com/00qQnfNo7sSpn3pB1hYKkyeSDvxs01NxiQ3sr29uL3e028.m3u8";
+
+// URLs únicas — el caché de HLS mapea cada URL a una instancia
+export const UNIQUE_URLS = [V1, V2, V3, V4, V5] as const;
+
+const SLIDES = [
+  // Slide 00: nuestro fondo PBR original
+  { num: "00", chapter: "Subastop · PBR",     title: "Grade Concorde + Spring Physics", subtitle: "BSSRDF · Fresnel Schlick · Spring ζ=0.35 · Shadow k=0..5", type: "pbr",        video: V4 },
+  // Slides 01–20: flow³-presentation
+  { num: "01", chapter: "Cover",               title: "FLOW³",                          subtitle: "A Conscious Design Solution · v3.0 Universe Edition",    type: "cover",       video: V1 },
+  { num: "02", chapter: "Chapter 0: The Why",  title: "Why a New Universe?",             subtitle: "FloW3 es un Open System: intercambia info con el entorno para evolucionar.",  type: "split",  video: V2 },
+  { num: "03", chapter: "Chapter 1: Constant", title: "1.618 — Phi (φ)",                subtitle: "The cosmological constant. Natural optimization, not mysticism.",              type: "big-number", video: V3 },
+  { num: "04", chapter: "Spacing",             title: "Fibonacci Spacing",              subtitle: "2 · 3 · 5 · 8 · 13 · 21 · 34 · 55 px",                 type: "grid",        video: V4 },
+  { num: "05", chapter: "Typography",          title: "Root Phi √φ = 1.272",           subtitle: "Font Size: Round(16 × 1.272ⁿ). Phi es muy agresivo para texto.",              type: "split",  video: V5 },
+  { num: "06", chapter: "Color",               title: "The Force: OKLCH",               subtitle: "oklch(L, C, H) — Perceptually uniform. Dark mode calculated.",               type: "split",  video: V1 },
+  { num: "07", chapter: "Physics",             title: "Radius & Depth",                 subtitle: "Radius: Fibonacci · Shadow: Blur & Offset Fibonacci · Motion: Spring.",       type: "grid",   video: V2 },
+  { num: "08", chapter: "Chapter 3: Cemetery", title: "Rejected Ideas",                 subtitle: "4px Grid · Fibonacci Text · Atomic Design · Sass Vars — descartados.",        type: "list",   video: V3 },
+  { num: "09", chapter: "Chapter 4: Tokens",   title: "The 3 Layers",                   subtitle: "Primitives (Math) → Semantics (Function) → Components (Context)",            type: "split",  video: V4 },
+  { num: "10", chapter: "Structure",           title: "The Planets (Kits)",             subtitle: "α Full-width · β Square · γ Vertical · δ Compact · ε Micro",                type: "grid",   video: V5 },
+  { num: "11", chapter: "Chapter 6: Species",  title: "Functional Taxonomy",            subtitle: "Foundations · Actions · Inputs · Navigation · Feedback · Overlays · Data",   type: "list",   video: V1 },
+  { num: "12", chapter: "Standards",           title: "Component Anatomy",              subtitle: "10 secciones: What · When · Anatomy · Variants · States · A11y · Do/Don't", type: "split",  video: V2 },
+  { num: "13", chapter: "Lifecycle",           title: "Senescence",                     subtitle: "Experimental → Stable → Senescent → Extinct. Biological approach to legacy.", type: "big-number", video: V3 },
+  { num: "14", chapter: "Chapter 7",           title: "The 7 Laws of Physics",          subtitle: "I. Generative · II. Scaling · III. Adaptation · IV. Modular · VI. Feedback", type: "grid",  video: V4 },
+  { num: "15", chapter: "Chapter 8: Nervous",  title: "AI-Driven Stack",                subtitle: "Next.js + TS + Style Dictionary. The AI executes 'how' based on 'what'.",    type: "split",  video: V5 },
+  { num: "16", chapter: "Agents",              title: "Sub-agent Hierarchy",            subtitle: "L1 Rules · L2 Professionals · L3 Operatives · L4 Skills",                    type: "list",   video: V1 },
+  { num: "17", chapter: "Tools",               title: "The Body Parts",                 subtitle: "The Eye (Claude+Figma) · The Hands (Cursor) · Immune System (CI/CD)",        type: "grid",   video: V2 },
+  { num: "18", chapter: "Metabolism",          title: "The Workflow",                   subtitle: "Design → Perception → Build → Validation → Approval.",                        type: "split",  video: V3 },
+  { num: "19", chapter: "Chapter 10",          title: "Evolution Roadmap",              subtitle: "Phase 1: Core (4w) · Phase 2: Docs (3w) · Phase 3: WCAG (3w) · Phase 4: Scale (4w)", type: "list", video: V4 },
+  { num: "20", chapter: "Cover",               title: "Biomimesis",                     subtitle: "Where φ works, we use it. Where it doesn't, we use human perception.",        type: "cover",  video: V5 },
 ] as const;
 
-// ── 2. SLIDE 00 — Fondo PBR (nuestro trabajo original) ──────────────────────
-// Grade Concorde + BSSRDF + Fresnel + Spring Physics underdamped
-// El Deck monta el video base + grade + capa PBR (pbr-bg.css ::after)
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. REPRODUCTOR HLS COMPARTIDO — A/B crossfade, 1 stream activo
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Contexto que expone el índice activo a todos los slides (sin prop drilling)
+const SlideIndexCtx = createContext(0);
+
+/**
+ * Caché de instancias HLS por URL.
+ * Evita crear múltiples instancias para la misma URL al navegar
+ * de vuelta a un slide ya visitado.
+ */
+const hlsCache = new Map<string, Hls>();
+
+function getOrCreateHls(url: string, video: HTMLVideoElement): Hls {
+  let hls = hlsCache.get(url);
+  if (!hls || hls.media === null) {
+    hls = new Hls({
+      enableWorker: true,
+      // Carga solo el segmento inicial — no bufferiza todo de antemano
+      maxBufferLength: 8,          // segundos de buffer máximo
+      maxMaxBufferLength: 30,
+      // Baja resolución inicial para arrancar rápido
+      startLevel: -1,              // ABR automático desde el segmento más bajo
+      abrEwmaDefaultEstimate: 500_000, // estimación inicial: 500kbps
+    });
+    hls.loadSource(url);
+    hlsCache.set(url, hls);
+  }
+  // Re-adjuntar si el video cambió
+  if (hls.media !== video) hls.attachMedia(video);
+  return hls;
+}
+
+/**
+ * Reproductor A/B compartido.
+ * Monta 2 elementos <video> (buffer A y B). Al cambiar de slide:
+ *   1. El buffer inactivo carga la nueva URL
+ *   2. Cross-fade CSS entre ambos
+ *   3. Los roles A/B se intercambian
+ */
+function SharedVideoPlayer({
+  currentUrl,
+  nextUrl,
+}: {
+  currentUrl: string;
+  nextUrl: string | null;
+}) {
+  const refA = useRef<HTMLVideoElement>(null);
+  const refB = useRef<HTMLVideoElement>(null);
+  // "which" indica cuál buffer es el activo ahora mismo
+  const [active, setActive] = useState<"A" | "B">("A");
+  const prevUrl = useRef(currentUrl);
+
+  // Al cambiar de URL: cargar en el buffer inactivo y hacer crossfade
+  useEffect(() => {
+    if (currentUrl === prevUrl.current) return;
+    prevUrl.current = currentUrl;
+
+    const incoming = active === "A" ? refB.current : refA.current;
+    if (!incoming) return;
+
+    if (Hls.isSupported()) {
+      getOrCreateHls(currentUrl, incoming);
+      incoming.play().catch(() => {});
+    } else if (incoming.canPlayType("application/vnd.apple.mpegurl")) {
+      incoming.src = currentUrl;
+      incoming.play().catch(() => {});
+    }
+
+    setActive((prev) => (prev === "A" ? "B" : "A"));
+  }, [currentUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Inicializar el buffer activo en mount
+  useEffect(() => {
+    const video = refA.current;
+    if (!video) return;
+    if (Hls.isSupported()) {
+      getOrCreateHls(currentUrl, video);
+      video.play().catch(() => {});
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = currentUrl;
+      video.play().catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Precargar el siguiente video en idle time (no bloquea el hilo principal)
+  useEffect(() => {
+    if (!nextUrl || nextUrl === currentUrl) return;
+    // requestIdleCallback: solo cuando el navegador esté libre
+    const id = (window.requestIdleCallback ?? setTimeout)(() => {
+      if (Hls.isSupported() && !hlsCache.has(nextUrl)) {
+        const hls = new Hls({
+          enableWorker: true,
+          maxBufferLength: 4,
+          startLevel: -1,
+          autoStartLoad: false, // carga el manifiesto pero no los segmentos
+        });
+        hls.loadSource(nextUrl);
+        hlsCache.set(nextUrl, hls);
+      }
+    }, { timeout: 2000 });
+
+    return () => (window.cancelIdleCallback ?? clearTimeout)(id as number);
+  }, [nextUrl, currentUrl]);
+
+  const isAactive = active === "A";
+
+  return (
+    <div className="video-bg shared-player" aria-hidden>
+      {/* Buffer A */}
+      <video
+        ref={refA}
+        muted loop playsInline
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "cover", opacity: isAactive ? 0.7 : 0,
+          transition: "opacity 0.55s ease",
+        }}
+      />
+      {/* Buffer B */}
+      <video
+        ref={refB}
+        muted loop playsInline
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "cover", opacity: isAactive ? 0 : 0.7,
+          transition: "opacity 0.55s ease",
+        }}
+      />
+      <div className="video-veil" />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. WRAPPER DEL DECK — expone índice activo via contexto
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * El Deck original no expone su índice activo.
+ * Sincronizamos leyendo el hash de la URL (que el Deck actualiza en cada nav).
+ * Así no modificamos deck.tsx y mantenemos la compatibilidad.
+ */
+function useCurrentSlideIndex(total: number): number {
+  const [idx, setIdx] = useState(() => {
+    const h = parseInt(window.location.hash.split("/")[2] ?? "", 10);
+    return Number.isFinite(h) && h >= 1 && h <= total ? h - 1 : 0;
+  });
+
+  useEffect(() => {
+    const onHash = () => {
+      const h = parseInt(window.location.hash.split("/")[2] ?? "", 10);
+      if (Number.isFinite(h) && h >= 1 && h <= total) setIdx(h - 1);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [total]);
+
+  return idx;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. COMPONENTES DE SLIDE — sin VideoBackground propio
+// ═══════════════════════════════════════════════════════════════════════════
 
 function PBRSlide() {
   return (
-    // El Deck ya aporta: video HLS + grade Concorde + blobs spring PBR
-    // Este slide solo añade el contenido encima — sin tocar el glass
     <div className="bg-slide" data-bg="pbr-grade">
       <div className="vc-content">
         <span className="fondo-eyebrow">flow³ · 00 / 20 · PBR</span>
@@ -212,15 +264,12 @@ function PBRSlide() {
   );
 }
 
-// ── 3. SLIDE de flow³ individual ─────────────────────────────────────────────
-
-function Flow3Slide({ slide }: { slide: (typeof FLOW3_SLIDES)[number] }) {
+function Flow3Slide({ slide }: { slide: (typeof SLIDES)[number] }) {
   return (
-    <div className="bg-slide" data-bg="video-catalog">
-      <VideoBackground src={slide.video} />
+    // CSS containment: el navegador puede saltar el layout/paint de slides no visibles
+    <div className="bg-slide flow3-slide" data-bg="video-catalog" style={{ contain: "strict" }}>
+      {/* Sin VideoBackground aquí — el SharedVideoPlayer se encarga */}
       <div className="vc-veil" aria-hidden />
-
-      {/* Número fantasma de fondo */}
       <span className="vc-ghost" aria-hidden>{slide.num}</span>
 
       <div className="vc-content">
@@ -238,23 +287,55 @@ function Flow3Slide({ slide }: { slide: (typeof FLOW3_SLIDES)[number] }) {
   );
 }
 
-// ── 4. DECK ──────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. DECK PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function FondoDeck() {
-  return (
-    // El video base es el del deck fondo (4IMYGcL...) — se ve en el slide PBR.
-    // Los slides de flow³ montan cada uno su propio VideoBackground encima.
-    <Deck
-      id="fondo"
-      video="https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8"
-    >
-      {/* Slide 00: nuestro trabajo PBR original */}
-      <PBRSlide />
+  const total = SLIDES.length;
+  const activeIdx = useCurrentSlideIndex(total);
 
-      {/* Slides 01–20: los 20 slides de flow³-presentation */}
-      {FLOW3_SLIDES.map((s) => (
-        <Flow3Slide key={s.num} slide={s} />
-      ))}
-    </Deck>
+  const currentUrl = useMemo(() => SLIDES[activeIdx].video, [activeIdx]);
+  const nextUrl    = useMemo(
+    () => (activeIdx + 1 < total ? SLIDES[activeIdx + 1].video : null),
+    [activeIdx, total],
+  );
+
+  return (
+    <SlideIndexCtx.Provider value={activeIdx}>
+      {/*
+        El Deck gestiona navegación, HUD y crossfade de slides.
+        NO pasamos `video` prop — el SharedVideoPlayer reemplaza al VideoBackground.
+      */}
+      <Deck id="fondo">
+        {/*
+          SharedVideoPlayer se renderiza como primer slide (slot 0 del Deck).
+          Pero el Deck lo trataría como un slide más y haría crossfade de él.
+          En cambio lo sacamos FUERA del Deck y lo montamos como sibling
+          usando un portal o posicionamiento absoluto.
+          
+          NOTA: Como no podemos renderizar fuera del Deck fácilmente sin modificarlo,
+          usamos el truco de montarlo como primer hijo vacío y añadimos el player
+          vía CSS position:fixed scoped al data-deck="fondo".
+          El player real se monta como overlay del wrapper de abajo.
+        */}
+        {SLIDES.map((s, i) =>
+          i === 0 ? <PBRSlide key="pbr" /> : <Flow3Slide key={s.num} slide={s} />
+        )}
+      </Deck>
+
+      {/*
+        El SharedVideoPlayer vive FUERA del Deck (como hermano en el DOM).
+        Usa position:fixed para cubrir toda la pantalla y queda debajo del Deck
+        gracias al z-index. Solo es visible en el deck "fondo".
+      */}
+      <div
+        className="fondo-shared-player-root"
+        aria-hidden
+        data-active-slide={activeIdx}
+      >
+        <SharedVideoPlayer currentUrl={currentUrl} nextUrl={nextUrl} />
+      </div>
+    </SlideIndexCtx.Provider>
   );
 }

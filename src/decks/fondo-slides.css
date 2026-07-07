@@ -1,8 +1,56 @@
 /* fondo-slides.css — Estilos del catálogo de fondos flow³
- * Cada [data-bg] define la capa visual que se superpone al escenario base
- * del deck fondo (video + grade Concorde + blobs PBR ya presentes).
- * Los slides son position:absolute;inset:0 dentro del .slide-wrap.
+ *
+ * OPTIMIZACIONES DE RENDIMIENTO:
+ *   1. CSS containment en slides: contain:strict → el navegador saltea
+ *      layout/paint de slides fuera del viewport visible.
+ *   2. will-change solo en el slide activo → evita promover 21 capas GPU.
+ *   3. SharedVideoPlayer fuera del Deck → un solo contexto de decodificación.
  */
+
+/* ── SharedVideoPlayer — root montado fuera del Deck ────────────────────── */
+/* z-index: -1 → debajo del .deck que tiene position:fixed */
+.fondo-shared-player-root {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Solo visible cuando el deck fondo está activo */
+  display: none;
+}
+/* Se activa cuando el data-deck="fondo" existe en el DOM */
+body:has([data-deck="fondo"]) .fondo-shared-player-root {
+  display: block;
+}
+
+/* El player hereda los estilos de .video-bg del deck */
+.shared-player {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* ── CSS Containment — reduce trabajo del navegador en slides ocultos ────── */
+/* contain:strict = contain:layout + paint + size
+   El navegador puede ignorar completamente el layout de slides no visibles */
+.flow3-slide {
+  contain: strict;
+}
+
+/* will-change solo en el slide ACTIVO (promovido a capa GPU solo cuando se necesita) */
+.slide-wrap.active .flow3-slide {
+  will-change: opacity, transform;
+}
+/* Al salir de activo → retirar will-change para liberar la capa GPU */
+.slide-wrap:not(.active) .flow3-slide {
+  will-change: auto;
+}
+
+/* ── Suspender animaciones PBR en slides no visibles ───────────────────── */
+/* Los @keyframes de pbr-bg.css solo consumen CPU/GPU en el slide activo */
+.slide-wrap:not(.active) [data-bg="pbr-grade"] .vc-content,
+.slide-wrap:not(.active) .vc-ghost {
+  animation: none !important;
+}
 
 /* ── Slide contenedor base ───────────────────────────────────────────────── */
 
