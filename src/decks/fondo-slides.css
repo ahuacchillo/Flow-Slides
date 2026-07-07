@@ -9,22 +9,24 @@
 .bg-slide {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: flex-end;
-  padding: clamp(32px, 6vmin, 80px);
   overflow: hidden;
+  /* NO flex aquí — usamos position absolute en los hijos para evitar solapamiento */
 }
 
-/* ── Label de identificación (esquina inferior izquierda) ────────────────── */
+/* ── Label de identificación — anclado al bottom-left, nunca se mueve ─────── */
 
 .bg-label {
+  position: absolute;
+  bottom: clamp(90px, 10vmin, 120px); /* por encima de la HUD pill */
+  left: clamp(32px, 6vmin, 80px);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   z-index: 10;
+  pointer-events: none;
 }
 .bg-tag {
-  font-size: clamp(10px, 1.2vmin, 12px);
+  font-size: clamp(10px, 1.2vmin, 11px);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -32,10 +34,11 @@
   opacity: 0.72;
 }
 .bg-label strong {
-  font-size: clamp(1rem, 2.4vmin, 1.4rem);
+  font-size: clamp(0.95rem, 2vmin, 1.2rem);
   font-weight: 800;
   color: var(--text);
   letter-spacing: -0.02em;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
 }
 
 /* ── Contenido de título centrado ─────────────────────────────────────────── */
@@ -49,13 +52,15 @@
   justify-content: center;
   text-align: center;
   gap: clamp(14px, 2.5vmin, 28px);
-  padding: clamp(32px, 6vmin, 80px);
+  /* padding-bottom generoso para nunca pisar el .bg-label del bottom-left */
+  padding: clamp(32px, 6vmin, 80px) clamp(32px, 6vmin, 80px) clamp(120px, 18vmin, 200px);
   z-index: 5;
+  pointer-events: none;
 }
 
 .fondo-title-content h1 {
   margin: 0;
-  font-size: clamp(2.8rem, 8vmin, 6rem);
+  font-size: clamp(2.6rem, 7.5vmin, 5.5rem);
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.04em;
@@ -64,7 +69,7 @@
 .fondo-title-content p {
   margin: 0;
   color: var(--text-dim);
-  font-size: clamp(0.95rem, 2vmin, 1.15rem);
+  font-size: clamp(0.9rem, 1.8vmin, 1.1rem);
   line-height: 1.6;
 }
 
@@ -91,13 +96,8 @@
    Cada slide AGREGA una capa encima (o suprime via z-index/overlay)
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── 01: Grade Concorde + PBR ── el fondo por defecto, nada que agregar ─── */
-[data-bg="pbr-grade"] {
-  /* el deck ya tiene todo: video + grade + blobs spring + capa PBR */
-  /* solo ajustamos el align del label a la derecha para el slide título */
-  align-items: center;
-  justify-content: center;
-}
+/* ── 01: Grade Concorde + PBR ── el fondo por defecto, sin overlay extra ─── */
+/* El deck ya tiene todo: video + grade + blobs spring + capa PBR            */
 
 /* ── 02: Gradiente base estático — oculta el video y los blobs ───────────── */
 [data-bg="base-gradient"]::before {
