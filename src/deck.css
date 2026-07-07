@@ -1,0 +1,627 @@
+/* deck.css — motor de presentaciones Subastop · liquid glass sobre tokens Concorde */
+
+:root {
+  --vmc-font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  /* Paleta Concorde (extraída de los componentes) */
+  --ink: #0a0711;
+  --purple-900: #3b1782;
+  --purple-700: #5a35c2;
+  --purple-500: #8460e5;
+  --lilac: #ae8eff;
+  --lilac-soft: #cfbaff;
+  --amber: #ff9639;
+  --amber-soft: #fbc47d;
+  --teal: #00aeb1;
+
+  --glass-line: rgba(255, 255, 255, 0.22);
+  --text: #ffffff;
+  --text-dim: rgba(255, 255, 255, 0.72);
+}
+
+/* ── Escenario ──────────────────────────────────────────────────────────── */
+
+.deck {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--vmc-font-display);
+  color: var(--text);
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(59, 23, 130, 0.4) 0%, transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(35, 9, 79, 0.45) 0%, transparent 55%),
+    var(--ink);
+}
+
+/* Fondo de video (HLS) — el vidrio lo difumina como agua en movimiento */
+.video-bg { position: absolute; inset: 0; overflow: hidden; }
+.video-bg video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+}
+.video-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 7, 17, 0.4), rgba(10, 7, 17, 0.12) 40%, rgba(10, 7, 17, 0.5));
+}
+
+/* Blobs líquidos detrás del vidrio */
+.blobs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  filter: blur(90px) saturate(140%);
+}
+.blobs i {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  opacity: 0.4;
+}
+.blobs i:nth-child(1) {
+  width: 55vmax; height: 55vmax; left: -12vmax; top: -18vmax;
+  background: radial-gradient(circle at 30% 30%, var(--purple-500), transparent 65%);
+  animation: drift-a 26s ease-in-out infinite alternate;
+}
+.blobs i:nth-child(2) {
+  width: 42vmax; height: 42vmax; right: -10vmax; bottom: -14vmax;
+  background: radial-gradient(circle at 60% 40%, var(--amber), transparent 62%);
+  opacity: 0.22;
+  animation: drift-b 21s ease-in-out infinite alternate;
+}
+.blobs i:nth-child(3) {
+  width: 30vmax; height: 30vmax; left: 38vw; top: 52vh;
+  background: radial-gradient(circle at 50% 50%, var(--teal), transparent 60%);
+  opacity: 0.14;
+  animation: drift-c 33s ease-in-out infinite alternate;
+}
+@keyframes drift-a { to { transform: translate(9vmax, 7vmax) scale(1.15); } }
+@keyframes drift-b { to { transform: translate(-8vmax, -9vmax) scale(1.22) rotate(20deg); } }
+@keyframes drift-c { to { transform: translate(-14vmax, -6vmax) scale(0.85); } }
+
+/* ── Vidrio líquido ─────────────────────────────────────────────────────── */
+
+.glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(255, 255, 255, 0.008)
+  );
+  /* blur bajo: la animación del fondo se ve a través del vidrio */
+  -webkit-backdrop-filter: blur(9px) saturate(140%);
+  backdrop-filter: blur(9px) saturate(140%);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+/* ── Slide ──────────────────────────────────────────────────────────────── */
+
+.stage { position: absolute; inset: 0; }
+
+/* Crossfade con escala: todos los slides montados, solo el activo visible */
+.slide-wrap {
+  position: absolute;
+  inset: 0;
+  padding: clamp(12px, 2.5vmin, 32px);
+  transition: opacity 0.55s ease, transform 0.55s ease, visibility 0s 0.55s;
+  visibility: hidden;
+}
+.slide-wrap.active { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; z-index: 2; }
+.slide-wrap.before { opacity: 0; transform: scale(0.96); pointer-events: none; }
+.slide-wrap.after { opacity: 0; transform: scale(1.045); pointer-events: none; }
+
+/* Pantalla completa: el slide llena el escenario, nunca scrollea */
+.slide {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: clamp(28px, 5vmin, 72px) clamp(28px, 6vmin, 96px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(12px, 2.4vmin, 26px);
+}
+.slide.center { align-items: center; text-align: center; }
+
+/* Revelado escalonado: corre cada vez que el slide se activa */
+.reveal { position: relative; opacity: 0; }
+.active .reveal {
+  animation: rise 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms + 250ms);
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── Tipografía ─────────────────────────────────────────────────────────── */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: clamp(11px, 1.3vmin, 13px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lilac-soft);
+}
+.slide h1 {
+  margin: 0;
+  font-size: clamp(2.6rem, 8.5vmin, 6rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+.slide h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vmin, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+}
+
+/* Revelado editorial: cada palabra sube desde su máscara al activarse el slide */
+.w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.13em;
+  margin-bottom: -0.13em;
+}
+.wi { display: inline-block; transform: translateY(115%); }
+.active .wi {
+  animation: word-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(var(--w, 0) * 70ms + 250ms);
+}
+@keyframes word-up { to { transform: none; } }
+
+/* Titular a la izquierda, intro a la derecha (layout editorial) */
+.head {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: clamp(24px, 5vmin, 72px);
+  align-items: end;
+}
+.lead {
+  color: var(--text-dim);
+  font-size: clamp(0.92rem, 1.9vmin, 1.1rem) !important;
+  line-height: 1.6 !important;
+  margin: 0;
+}
+
+/* Numeral fantasma gigante de fondo */
+.ghost-num {
+  position: absolute;
+  top: -0.08em;
+  right: 0.04em;
+  font-size: clamp(11rem, 34vmin, 24rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(174, 142, 255, 0.14);
+  pointer-events: none;
+  user-select: none;
+}
+.slide p, .slide li { font-size: clamp(1rem, 2.2vmin, 1.35rem); color: var(--text-dim); line-height: 1.55; }
+.accent {
+  /* gradiente de señal VMC: naranja → lila */
+  background: linear-gradient(92deg, var(--amber-soft), var(--amber) 38%, var(--lilac-soft) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.slide ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.9em; }
+.slide ul li { padding-left: 1.6em; position: relative; }
+.slide ul li::before {
+  content: "";
+  position: absolute; left: 0; top: 0.5em;
+  width: 0.55em; height: 0.55em; border-radius: 50%;
+  background: linear-gradient(135deg, var(--amber-soft), var(--amber));
+  box-shadow: 0 0 12px rgba(255, 150, 57, 0.7);
+}
+
+/* ── Layouts ────────────────────────────────────────────────────────────── */
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 4vmin, 48px); align-items: center; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: clamp(14px, 2.5vmin, 24px); }
+
+.stat {
+  padding: clamp(18px, 3vmin, 32px);
+  border-radius: 22px;
+  display: flex; flex-direction: column; gap: 6px;
+  align-items: flex-start;
+}
+.stat .value {
+  font-size: clamp(2.2rem, 5.5vmin, 3.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.stat .label { font-size: clamp(0.85rem, 1.8vmin, 1rem); color: var(--text-dim); font-weight: 600; }
+
+/* ── Bloques de contenido ───────────────────────────────────────────────── */
+
+/* Número de slide con brackets VMC:  > 01 <  */
+.slide-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-size: clamp(1.6rem, 3.6vmin, 2.4rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  line-height: 1;
+}
+.slide-num svg { display: block; }
+.slide-num .chev-r { color: var(--amber); filter: drop-shadow(0 0 10px rgba(255, 150, 57, 0.7)); }
+.slide-num .chev-l { color: var(--lilac); filter: drop-shadow(0 0 10px rgba(174, 142, 255, 0.7)); }
+
+/* ── Home: galería de presentaciones ────────────────────────────────────── */
+
+.home {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: var(--vmc-font-display);
+  color: var(--text);
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(59, 23, 130, 0.4) 0%, transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(35, 9, 79, 0.45) 0%, transparent 55%),
+    var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: clamp(24px, 5vmin, 48px);
+  padding: clamp(24px, 6vmin, 64px);
+}
+.home header { text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; position: relative; }
+.home h1 { margin: 0; font-size: clamp(2rem, 5.5vmin, 3.6rem); font-weight: 800; letter-spacing: -0.03em; }
+.home header p { margin: 0; color: var(--text-dim); font-size: clamp(0.95rem, 2vmin, 1.15rem); }
+
+.home-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: clamp(16px, 3vmin, 28px);
+  width: min(1100px, 100%);
+}
+.deck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: clamp(22px, 3.5vmin, 34px);
+  text-align: left;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.deck-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 70px rgba(8, 2, 28, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.deck-card:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+.deck-card h3 { margin: 0; font-size: clamp(1.15rem, 2.6vmin, 1.5rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+.deck-card p { margin: 0; color: var(--text-dim); font-size: 0.95rem; line-height: 1.45; }
+.deck-card .meta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lilac-soft);
+}
+.deck-card .meta .go { color: var(--amber); font-size: 1.1rem; }
+
+/* ── Referencias de animación (catálogo en el home) ─────────────────────── */
+
+.anim-refs {
+  position: relative;
+  width: min(1100px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.anim-refs h2 { margin: 0; font-size: clamp(1.25rem, 2.8vmin, 1.8rem); font-weight: 800; letter-spacing: -0.02em; }
+.anim-refs > p { margin: 0 0 8px; color: var(--text-dim); font-size: 0.92rem; }
+
+.refs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 14px;
+}
+.ref-card { margin: 0; padding: 12px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
+.ref-card .demo {
+  position: relative;
+  height: 104px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ref-card figcaption { display: flex; flex-direction: column; gap: 2px; }
+.ref-card strong { font-size: 13px; color: var(--text); }
+.ref-card figcaption span { font-size: 11.5px; line-height: 1.45; color: var(--text-dim); }
+
+/* demo: crossfade + escala */
+.demo-cross i {
+  position: absolute;
+  width: 58%;
+  height: 58%;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+  animation: demo-cross 6s ease-in-out infinite;
+  opacity: 0;
+}
+.demo-cross i:nth-child(2) { animation-delay: -3s; }
+@keyframes demo-cross {
+  0%, 4% { opacity: 0; transform: scale(1.08); }
+  14%, 44% { opacity: 1; transform: none; }
+  54%, 100% { opacity: 0; transform: scale(0.92); }
+}
+
+/* demo: píldora auto-ocultable */
+.demo-pill i {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+  animation: demo-pill 5s ease-in-out infinite;
+}
+.demo-pill b { width: 5px; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.5); }
+@keyframes demo-pill {
+  0%, 45% { opacity: 1; transform: none; }
+  58%, 82% { opacity: 0; transform: translateY(12px); }
+  95%, 100% { opacity: 1; transform: none; }
+}
+
+/* demo: dots de progreso */
+.demo-dots b {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+  animation: demo-dot 6s infinite;
+}
+.demo-dots b:nth-child(2) { animation-delay: 1.5s; }
+.demo-dots b:nth-child(3) { animation-delay: 3s; }
+.demo-dots b:nth-child(4) { animation-delay: 4.5s; }
+@keyframes demo-dot {
+  0%, 22% { width: 22px; background: linear-gradient(90deg, var(--amber), var(--lilac)); }
+  26%, 100% { width: 6px; background: rgba(255, 255, 255, 0.3); }
+}
+
+/* demo: reveal palabra a palabra (en loop) */
+.demo-words { font-weight: 800; font-size: 21px; letter-spacing: -0.02em; }
+.demo-words .w > span {
+  display: inline-block;
+  transform: translateY(115%);
+  animation: demo-word 4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+.demo-words .w:nth-child(2) > span { animation-delay: 0.12s; }
+.demo-words .w:nth-child(3) > span { animation-delay: 0.24s; }
+@keyframes demo-word {
+  0% { transform: translateY(115%); }
+  14% { transform: none; }
+  72% { transform: none; }
+  86%, 100% { transform: translateY(115%); }
+}
+
+/* demo: reveal escalonado (en loop) */
+.demo-rise { flex-direction: column; }
+.demo-rise i {
+  width: 62%;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  animation: demo-rise 4s ease infinite;
+}
+.demo-rise i:nth-child(2) { animation-delay: 0.15s; width: 48%; }
+.demo-rise i:nth-child(3) { animation-delay: 0.3s; width: 55%; }
+@keyframes demo-rise {
+  0% { opacity: 0; transform: translateY(14px); }
+  16% { opacity: 1; transform: none; }
+  72% { opacity: 1; transform: none; }
+  88%, 100% { opacity: 0; transform: translateY(14px); }
+}
+
+.item { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.slide .center-items .item, .flow .item { align-items: center; text-align: center; }
+.item .ic {
+  color: var(--lilac);
+  filter: drop-shadow(0 0 10px rgba(174, 142, 255, 0.55));
+}
+.item h3 { margin: 0; font-size: clamp(0.95rem, 2vmin, 1.15rem); font-weight: 700; color: var(--text); }
+.item p { font-size: clamp(0.8rem, 1.7vmin, 0.95rem); margin: 0; line-height: 1.45; }
+
+/* Columnas con divisores verticales (slides 02, 03, 10, 11) */
+.icon-grid { display: flex; flex-wrap: wrap; gap: clamp(14px, 2.5vmin, 28px); }
+.icon-grid > * { flex: 1 1 140px; min-width: 140px; }
+.icon-grid > * + * {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  padding-left: clamp(14px, 2.5vmin, 28px);
+}
+
+/* Tarjetas de vidrio pequeñas (slide 05) */
+.card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 1.8vmin, 18px); }
+.card-grid .item {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  padding: clamp(12px, 2vmin, 20px);
+}
+
+/* Checklist con CheckIcon Concorde */
+.checks { display: flex; flex-direction: column; gap: 0.85em; }
+.checks li { display: flex; gap: 12px; align-items: flex-start; padding-left: 0 !important; }
+.checks li::before { display: none; }
+.checks li svg { flex-shrink: 0; margin-top: 0.15em; filter: drop-shadow(0 0 8px rgba(174, 142, 255, 0.5)); }
+
+/* Flujo con flechas (slide 09) */
+.flow { display: flex; align-items: flex-start; gap: clamp(8px, 1.5vmin, 16px); flex-wrap: wrap; }
+.flow-step { display: flex; align-items: flex-start; gap: clamp(8px, 1.5vmin, 16px); flex: 1 1 0; min-width: 130px; }
+.flow-step .arrow { color: var(--amber); font-size: 1.4em; margin-top: 0.5em; text-shadow: 0 0 12px rgba(255, 150, 57, 0.8); }
+.flow-step .item { flex: 1; }
+
+/* Píldora destacada */
+.callout {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 14px 28px;
+  font-weight: 700;
+  font-size: clamp(1rem, 2.2vmin, 1.3rem);
+  color: var(--lilac-soft);
+  border-color: rgba(174, 142, 255, 0.45);
+}
+.slide.center .callout { align-self: center; }
+
+/* Tarjeta pregunta (slide 06) */
+.qcard {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  border-radius: 22px;
+  padding: clamp(16px, 3vmin, 28px);
+  border-color: rgba(255, 150, 57, 0.4);
+}
+.qcard .ic { color: var(--amber); filter: drop-shadow(0 0 12px rgba(255, 150, 57, 0.7)); flex-shrink: 0; }
+.qcard h3 { margin: 0 0 6px; font-size: clamp(1.05rem, 2.3vmin, 1.35rem); color: var(--amber-soft); }
+.qcard p { margin: 0; }
+
+/* Tarjeta visual (layout split): ícono + fórmula/frase */
+.visual-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 2.5vmin, 24px);
+  padding: clamp(24px, 5vmin, 56px);
+  border-radius: 26px;
+  text-align: center;
+}
+.visual-card .ic { color: var(--lilac); filter: drop-shadow(0 0 14px rgba(174, 142, 255, 0.6)); }
+.visual-card p { margin: 0; font-weight: 600; color: var(--text); font-size: clamp(1rem, 2.2vmin, 1.4rem); }
+
+/* Número protagonista (layout big-number) */
+.big-num {
+  font-size: clamp(4.5rem, 17vmin, 12rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+.big-label {
+  font-size: clamp(1.2rem, 2.8vmin, 2rem);
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+/* ── HUD: píldora flotante que se auto-oculta ───────────────────────────── */
+
+.hud-pill {
+  position: absolute;
+  bottom: clamp(16px, 3vmin, 30px);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vmin, 22px);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  transition: opacity 0.35s ease, translate 0.35s ease;
+}
+.hud-pill.hidden { opacity: 0; translate: -50% 14px; pointer-events: none; }
+
+.dots { display: flex; gap: 6px; align-items: center; }
+.dots button {
+  width: 6px; height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+.dots button.on {
+  width: 24px;
+  background: linear-gradient(90deg, var(--amber), var(--lilac));
+}
+.dots button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.pill-btns { display: flex; gap: 4px; padding-left: 14px; border-left: 1px solid rgba(255, 255, 255, 0.12); }
+.pill-btns button {
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  opacity: 0.6;
+  font-size: 17px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.pill-btns button:hover:not(:disabled) { opacity: 1; background: rgba(255, 255, 255, 0.12); }
+.pill-btns button:disabled { opacity: 0.2; cursor: default; }
+.pill-btns button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; opacity: 1; }
+
+@media (max-width: 720px) {
+  .split { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr 1fr; }
+  .head { grid-template-columns: 1fr; align-items: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blobs i, .reveal, .wi, .active .reveal, .active .wi,
+  .demo-cross i, .demo-pill i, .demo-dots b, .demo-words .w > span, .demo-rise i { animation: none !important; }
+  .reveal, .wi, .demo-cross i, .demo-words .w > span, .demo-rise i { opacity: 1; transform: none; }
+  .slide-wrap { transition: none; }
+  .video-bg video { display: none; }
+}
