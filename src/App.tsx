@@ -295,7 +295,7 @@ export default function App() {
               >
                 {/* Mini player placeholder */}
                 <div style={{ width: "64px", height: "44px", borderRadius: "8px", overflow: "hidden", background: "#000", position: "relative", flexShrink: 0 }}>
-                  <div style={{ position: "absolute", inset: 0, background: "rgba(90, 53, 194, 0.25)", z-index: 1 }} />
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(90, 53, 194, 0.25)", zIndex: 1 }} />
                   <VideoBackground src={video.url} />
                 </div>
                 <div style={{ flexGrow: 1, minWidth: 0 }}>
