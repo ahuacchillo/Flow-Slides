@@ -362,42 +362,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── REFERENCIAS DE ANIMACIÓN COMPLEMENTARIAS ──────────────────────────── */}
-      <section className="anim-refs" style={{ width: "100%", maxWidth: "1280px", margin: "0 auto", zIndex: 10 }}>
-        <h2>Core Animations Reference</h2>
-        <p>Interactive catalog of visual components optimized inside the FLOW³ physics framework.</p>
-        <div className="refs-grid">
-          <figure className="glass ref-card">
-            <div className="demo demo-cross"><i /><i /></div>
-            <figcaption>
-              <strong>Crossfade + Scale</strong>
-              <span>Slide wrap transition (Out at 96%, In at 104.5%) — <code>.slide-wrap</code></span>
-            </figcaption>
-          </figure>
-          <figure className="glass ref-card">
-            <div className="demo demo-video"><VideoBackground src="https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8" /></div>
-            <figcaption>
-              <strong>HLS Video Environment</strong>
-              <span>Muted, loops behind blurred glass container — <code>video</code> prop</span>
-            </figcaption>
-          </figure>
-          <figure className="glass ref-card">
-            <div className="demo demo-pill"><i><b /><b /><b /></i></div>
-            <figcaption>
-              <strong>Auto-hide HUD Control</strong>
-              <span>Controls layout fades away after 3s of mouse inactivity — <code>.hud-pill</code></span>
-            </figcaption>
-          </figure>
-          <figure className="glass ref-card">
-            <div className="demo demo-dots"><b /><b /><b /><b /></div>
-            <figcaption>
-              <strong>Active Progress Dot</strong>
-              <span>Active progress indicator scales with golden gradient stretch — <code>.dots</code></span>
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
       {/* ── MODAL VISOR DE CÓDIGO (TOOL INTERACTIVA) ────────────────────────── */}
       {activeSkillDoc && (
         <div
