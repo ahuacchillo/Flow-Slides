@@ -15,8 +15,8 @@ const DECKS = [
   {
     id: "fondo",
     title: "Fondos flow³",
-    desc: "Los 5 videos únicos del sistema flow³: portada, filosofía, Phi, Fibonacci y tipografía √φ.",
-    count: 5,
+    desc: "Slide 00: fondo PBR propio (Grade Concorde + BSSRDF + spring physics). Slides 01–20: todos los fondos de flow³-presentation con sus videos y temas originales.",
+    count: 21,
     Component: FondoDeck,
   },
   // ponytail: nueva presentación = nuevo archivo en src/decks/ + una entrada aquí
