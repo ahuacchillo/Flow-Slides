@@ -1,0 +1,215 @@
+/*
+ * pbr-bg.css — Sistema PBR para el Deck "fondo"
+ * Scope: SOLO el fondo/escenario (video-bg + blobs). El .glass NO se toca.
+ * La capa de iluminación PBR se inyecta como ::after del .video-bg
+ * — sin necesidad de nodos React adicionales.
+ *
+ * ── TOKENS MATEMÁTICOS ──────────────────────────────────────────────────────
+ *
+ *  IOR (silicona) ≈ 1.45 → F0 = ((1.45-1)/(1.45+1))² ≈ 0.034
+ *
+ *  SHADOW LAYERING — Inversa del Cuadrado:
+ *  Layer k: offset_y[k] = 3 * 2.1^k,  blur[k] = 6 * 2.1^k
+ *           alpha[k]    = 0.5 / (k+1)²   (decaimiento inverso cuadrado)
+ *
+ *  k=0: y=  3px, blur=  6px, α=0.500
+ *  k=1: y=  6px, blur= 13px, α=0.125
+ *  k=2: y= 13px, blur= 26px, α=0.056
+ *  k=3: y= 27px, blur= 55px, α=0.031
+ *  k=4: y= 57px, blur=115px, α=0.020
+ *  k=5: y=120px, blur=242px, α=0.014
+ *
+ *  SPRING PHYSICS — blobs underdamped:
+ *  m·ẍ + c·ẋ + k·x = 0,  ωn=8 rad/s, ζ=0.35
+ *  Blob A: m=1.0, Blob B: m=1.6, Blob C: m=2.4
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Tokens PBR (variables de iluminación y sombra) ─────────────────────── */
+
+[data-deck="fondo"] {
+  --pbr-ior:         1.45;
+  --pbr-f0:          0.034;
+  --pbr-roughness:   0.18;
+  --light-color:     215, 186, 255;   /* lila-blanco ~6200K          */
+  --light-warm:      255, 163, 80;    /* rebote ámbar ambiental      */
+
+  /* Shadow tokens: escala geométrica r=2.1 */
+  --sh-k0-y:    3px;  --sh-k0-b:   6px;  --sh-k0-a: 0.50;
+  --sh-k1-y:    6px;  --sh-k1-b:  13px;  --sh-k1-a: 0.125;
+  --sh-k2-y:   13px;  --sh-k2-b:  26px;  --sh-k2-a: 0.056;
+  --sh-k3-y:   27px;  --sh-k3-b:  55px;  --sh-k3-a: 0.031;
+  --sh-k4-y:   57px;  --sh-k4-b: 115px;  --sh-k4-a: 0.020;
+  --sh-k5-y:  120px;  --sh-k5-b: 242px;  --sh-k5-a: 0.014;
+
+  /* SSS: colores de dispersión subsuperficial (silicona lila) */
+  --sss-surface:  rgba(207, 186, 255, 0.20);
+  --sss-mid:      rgba(174, 142, 255, 0.10);
+  --sss-deep:     rgba(90,  53, 194, 0.06);
+  --sss-bounce:   rgba(255, 150,  57, 0.04);
+}
+
+/* ── BLOBS con Spring Physics underdamped ─────────────────────────────────── */
+/*
+ * Se sobreescriben las animaciones ease-in-out originales por keyframes
+ * calculados con la solución discreta de la ecuación de spring:
+ *   x(t) = 1 - e^(-ζωn·t) · cos(ωd·t)
+ *   ωd = 8·√(1-0.35²) ≈ 7.51 rad/s
+ *
+ * Blob A (m=1.0, ωn=8.0): período ≈ 0.84s → mayor overshoot
+ * Blob B (m=1.6, ωn=6.3): período ≈ 1.00s → inercial
+ * Blob C (m=2.4, ωn=5.2): período ≈ 1.21s → muy lento
+ */
+
+@keyframes blob-spring-a {
+  0%   { transform: translate(0,           0)         scale(1.00); }
+  5%   { transform: translate(2vmax,    1.5vmax)      scale(1.03); }
+  20%  { transform: translate(10.8vmax, 8.4vmax)     scale(1.19); } /* overshoot */
+  31%  { transform: translate(11.5vmax, 9.0vmax)     scale(1.22); } /* pico      */
+  45%  { transform: translate(8.2vmax,  6.5vmax)     scale(1.13); } /* rebote    */
+  60%  { transform: translate(9.6vmax,  7.5vmax)     scale(1.16); } /* 2° over   */
+  75%  { transform: translate(9.1vmax,  7.1vmax)     scale(1.15); }
+  100% { transform: translate(9.0vmax,  7.0vmax)     scale(1.15); }
+}
+
+@keyframes blob-spring-b {
+  0%   { transform: translate(0,              0)              scale(1.00) rotate(0deg);  }
+  5%   { transform: translate(-1.5vmax,  -2vmax)             scale(1.04) rotate(2deg);  }
+  20%  { transform: translate(-9.6vmax, -10.8vmax)           scale(1.28) rotate(23deg); }
+  35%  { transform: translate(-10.2vmax,-11.5vmax)           scale(1.30) rotate(25deg); }
+  52%  { transform: translate(-7.4vmax,  -8.8vmax)           scale(1.20) rotate(18deg); }
+  68%  { transform: translate(-8.4vmax,  -9.6vmax)           scale(1.23) rotate(21deg); }
+  100% { transform: translate(-8.0vmax,  -9.0vmax)           scale(1.22) rotate(20deg); }
+}
+
+@keyframes blob-spring-c {
+  0%   { transform: translate(0,              0)         scale(1.00); }
+  8%   { transform: translate(-3vmax,    -1vmax)         scale(0.95); }
+  25%  { transform: translate(-16.8vmax, -7.2vmax)      scale(0.80); }
+  40%  { transform: translate(-17.5vmax, -7.5vmax)      scale(0.78); }
+  58%  { transform: translate(-13.2vmax, -5.8vmax)      scale(0.87); }
+  75%  { transform: translate(-14.8vmax, -6.4vmax)      scale(0.84); }
+  100% { transform: translate(-14.0vmax, -6.0vmax)      scale(0.85); }
+}
+
+[data-deck="fondo"] .blobs i:nth-child(1) {
+  animation: blob-spring-a 22s cubic-bezier(0.23, 1.32, 0.42, 0.98) infinite alternate;
+}
+[data-deck="fondo"] .blobs i:nth-child(2) {
+  animation: blob-spring-b 28s cubic-bezier(0.23, 1.32, 0.42, 0.98) infinite alternate;
+}
+[data-deck="fondo"] .blobs i:nth-child(3) {
+  animation: blob-spring-c 36s cubic-bezier(0.23, 1.32, 0.42, 0.98) infinite alternate;
+}
+
+/* ── CAPA DE ILUMINACIÓN PBR — inyectada como ::after del video-bg ─────────── */
+/*
+ * Se aprovecha el elemento .video-bg ya existente (position:absolute;inset:0)
+ * y se le añade un ::after que simula:
+ *   1. Lóbulo especular GGX (roughness=0.18 → estrecho)
+ *   2. Dispersión subsuperficial SSS (3 capas cromáticas, silicona lila)
+ *   3. Oclusión ambiental perimetral (AO)
+ * z-index: 3 → sobre el ::before/.video-veil original, bajo .blobs
+ */
+
+[data-deck="fondo"] .video-bg {
+  z-index: 0;  /* asegurar orden de capas */
+}
+
+/* Lóbulo especular GGX + Fresnel rimlight + SSS capa superficial + media */
+[data-deck="fondo"] .video-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background:
+    /* ── Especular GGX: lóbulo estrecho en dirección de luz (28%, 14%) ── */
+    radial-gradient(
+      ellipse 38% 20% at 28% 14%,
+      rgba(var(--light-color), 0.22) 0%,
+      rgba(var(--light-color), 0.06) 55%,
+      transparent                   100%
+    ),
+    /* ── Fresnel rimlight: borde opuesto a la fuente más brillante ─────── */
+    /*    F(θ)→1 en ángulo rasante (borde inferior-derecho) */
+    radial-gradient(
+      ellipse 110% 110% at 28% 14%,
+      transparent                    62%,
+      rgba(var(--light-color), 0.06) 80%,
+      rgba(var(--light-color), 0.18) 100%
+    ),
+    /* ── SSS capa 1: dispersión superficial (penetración ~1-2mm equiv.) ── */
+    radial-gradient(
+      ellipse 55% 30% at 24% 10%,
+      var(--sss-surface)             0%,
+      transparent                    75%
+    ),
+    /* ── SSS capa 2: scattering medio (~5-8mm) ──────────────────────────── */
+    radial-gradient(
+      ellipse 70% 45% at 20% 20%,
+      var(--sss-mid)                 0%,
+      transparent                    80%
+    ),
+    /* ── Rebote ámbar desde la base (bounce light ambiental) ────────────── */
+    radial-gradient(
+      ellipse 60% 30% at 75% 92%,
+      var(--sss-bounce)              0%,
+      transparent                    70%
+    );
+
+  mix-blend-mode: screen;
+  z-index: 3;
+  animation: pbr-specular-breathe 18s cubic-bezier(0.23, 1.32, 0.42, 0.98) infinite alternate;
+}
+
+/*
+ * BSSRDF SSS capa profunda + oclusión ambiental (AO) perimetral.
+ * El AO oscurece los bordes simulando que la luz no llega con igual
+ * intensidad a toda la superficie → da volumen al escenario.
+ */
+/* El AO y la SSS profunda se incluyen en las capas del ::after de arriba.  */
+
+/* ── Animación spring del especular: underdamped con overshoot ────────────── */
+/*
+ * Simula la luz de un celular oscilando levemente (mano que tiembla),
+ * con respuesta inercial del material viscoelástico.
+ *
+ * Keyframes = muestras de x(t) = 1 - e^(-2.8·t)·cos(7.51·t)
+ * en t=[0..3.5s] → 20 pasos de 175ms
+ */
+@keyframes pbr-specular-breathe {
+  0%   { opacity: 0.80; }
+  5%   { opacity: 0.87; }
+  11%  { opacity: 0.94; }
+  20%  { opacity: 1.00; }  /* 1er overshoot */
+  31%  { opacity: 1.00; }  /* pico          */
+  40%  { opacity: 0.95; }
+  50%  { opacity: 0.93; }  /* rebote bajo   */
+  60%  { opacity: 0.97; }  /* 2do overshoot */
+  70%  { opacity: 0.97; }
+  85%  { opacity: 0.95; }
+  100% { opacity: 0.88; }
+}
+
+/* ── AO + SSS profundo: capa adicional sobre el veil existente ──────────────── */
+/*
+ * El deck fondo ya define .video-veil::after con mix-blend-mode: soft-light.
+ * Aquí añadimos el AO y la SSS profunda como nuevo pseudo-elemento
+ * sobre el .video-bg directamente (usando pointer-events:none + z-index)
+ * para no interferir con el sistema de veil ya calibrado.
+ */
+[data-deck="fondo"] .blobs {
+  /* blobs sobre la capa PBR → z-index igual al original pero explícito */
+  z-index: 4;
+  position: absolute;
+}
+
+/* ── REDUCED MOTION ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-deck="fondo"] .blobs i:nth-child(1),
+  [data-deck="fondo"] .blobs i:nth-child(2),
+  [data-deck="fondo"] .blobs i:nth-child(3),
+  [data-deck="fondo"] .video-bg::after {
+    animation: none !important;
+  }
+}
