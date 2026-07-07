@@ -13,7 +13,7 @@ export default function FondoDeck() {
       {/* Slide 1: PBR Mathematics explanation with a 2x2 Grid Layout */}
       <Slide
         num="01"
-        eyebrow="flow³ · background engine"
+        eyebrow="voyager³ · background engine"
         title={<>PBR Flagship <span className="accent">Render Mathematics</span></>}
         center={false}
       >

@@ -1,4 +1,4 @@
-// App.tsx — FLOW³ Workspace: Dashboard de diseño, catálogo de fondos y visor de Skills de Antigravity
+// App.tsx — VOYAGER³ Workspace: Dashboard de diseño, catálogo de fondos y visor de Skills de Antigravity
 import { useEffect, useState } from "react";
 import { VideoBackground, Wordmark } from "./deck";
 import EticaDeck from "./decks/etica";
@@ -25,10 +25,10 @@ const DECKS = [
 ];
 
 // ── 2. SELECCIÓN DE FONDOS DE VIDEO (LABORATORIO) ──────────────────────────────
-const FLOW3_VIDEOS = [
+const VOYAGER3_VIDEOS = [
   {
     id: "V1",
-    title: "01 · Portada FLOW³",
+    title: "01 · Portada VOYAGER³",
     desc: "OKLCH color system template & layout entry.",
     url: "https://stream.mux.com/JNJEOYI6B3EffB9f5ZhpGbuxzc6gSyJcXaCBbCgZKRg.m3u8",
   },
@@ -191,7 +191,7 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "0 0 4px" }}>
           <Wordmark size={14} />
           <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "999px", background: "rgba(255, 150, 57, 0.12)", border: "1px solid rgba(255, 150, 57, 0.3)", color: "var(--amber)", fontWeight: 800, letterSpacing: "0.1em" }}>
-            FLOW³ LAB v3.0
+            VOYAGER³ LAB v3.0
           </span>
         </div>
         <h1 style={{ fontSize: "clamp(2.2rem, 5.5vw, 3.8rem)", fontWeight: 900, letterSpacing: "-0.04em", margin: 0 }}>
@@ -275,7 +275,7 @@ export default function App() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "400px", overflowY: "auto", paddingRight: "4px" }}>
-            {FLOW3_VIDEOS.map((video) => (
+            {VOYAGER3_VIDEOS.map((video) => (
               <div
                 key={video.id}
                 className="glass"
