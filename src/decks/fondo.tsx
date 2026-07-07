@@ -78,38 +78,12 @@ const SLIDES = [
 const SlideIndexCtx = createContext(0);
 
 /**
- * Caché de instancias HLS por URL.
- * Evita crear múltiples instancias para la misma URL al navegar
- * de vuelta a un slide ya visitado.
- */
-const hlsCache = new Map<string, Hls>();
-
-function getOrCreateHls(url: string, video: HTMLVideoElement): Hls {
-  let hls = hlsCache.get(url);
-  if (!hls || hls.media === null) {
-    hls = new Hls({
-      enableWorker: true,
-      // Carga solo el segmento inicial — no bufferiza todo de antemano
-      maxBufferLength: 8,          // segundos de buffer máximo
-      maxMaxBufferLength: 30,
-      // Baja resolución inicial para arrancar rápido
-      startLevel: -1,              // ABR automático desde el segmento más bajo
-      abrEwmaDefaultEstimate: 500_000, // estimación inicial: 500kbps
-    });
-    hls.loadSource(url);
-    hlsCache.set(url, hls);
-  }
-  // Re-adjuntar si el video cambió
-  if (hls.media !== video) hls.attachMedia(video);
-  return hls;
-}
-
-/**
  * Reproductor A/B compartido.
  * Monta 2 elementos <video> (buffer A y B). Al cambiar de slide:
  *   1. El buffer inactivo carga la nueva URL
  *   2. Cross-fade CSS entre ambos
  *   3. Los roles A/B se intercambian
+ *   4. Destruye las instancias HLS inactivas para liberar memoria
  */
 function SharedVideoPlayer({
   currentUrl,
@@ -120,61 +94,70 @@ function SharedVideoPlayer({
 }) {
   const refA = useRef<HTMLVideoElement>(null);
   const refB = useRef<HTMLVideoElement>(null);
-  // "which" indica cuál buffer es el activo ahora mismo
+  const hlsA = useRef<Hls | null>(null);
+  const hlsB = useRef<Hls | null>(null);
+
   const [active, setActive] = useState<"A" | "B">("A");
   const prevUrl = useRef(currentUrl);
 
-  // Al cambiar de URL: cargar en el buffer inactivo y hacer crossfade
+  const loadVideo = (video: HTMLVideoElement, url: string, isBufferA: boolean) => {
+    // Destruir instancia previa de este buffer para evitar fugas de memoria
+    if (isBufferA) {
+      if (hlsA.current) {
+        hlsA.current.destroy();
+        hlsA.current = null;
+      }
+    } else {
+      if (hlsB.current) {
+        hlsB.current.destroy();
+        hlsB.current = null;
+      }
+    }
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        maxBufferLength: 8,
+        maxMaxBufferLength: 15,
+        startLevel: -1,
+      });
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => {});
+      });
+      if (isBufferA) hlsA.current = hls;
+      else hlsB.current = hls;
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = url;
+      video.play().catch(() => {});
+    }
+  };
+
   useEffect(() => {
     if (currentUrl === prevUrl.current) return;
     prevUrl.current = currentUrl;
 
-    const incoming = active === "A" ? refB.current : refA.current;
-    if (!incoming) return;
+    const nextActive = active === "A" ? "B" : "A";
+    const incomingVideo = nextActive === "A" ? refA.current : refB.current;
 
-    if (Hls.isSupported()) {
-      getOrCreateHls(currentUrl, incoming);
-      incoming.play().catch(() => {});
-    } else if (incoming.canPlayType("application/vnd.apple.mpegurl")) {
-      incoming.src = currentUrl;
-      incoming.play().catch(() => {});
+    if (incomingVideo) {
+      loadVideo(incomingVideo, currentUrl, nextActive === "A");
     }
 
-    setActive((prev) => (prev === "A" ? "B" : "A"));
+    setActive(nextActive);
   }, [currentUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Inicializar el buffer activo en mount
+  // Inicializar en primer render
   useEffect(() => {
-    const video = refA.current;
-    if (!video) return;
-    if (Hls.isSupported()) {
-      getOrCreateHls(currentUrl, video);
-      video.play().catch(() => {});
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = currentUrl;
-      video.play().catch(() => {});
+    if (refA.current) {
+      loadVideo(refA.current, currentUrl, true);
     }
+    return () => {
+      if (hlsA.current) hlsA.current.destroy();
+      if (hlsB.current) hlsB.current.destroy();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Precargar el siguiente video en idle time (no bloquea el hilo principal)
-  useEffect(() => {
-    if (!nextUrl || nextUrl === currentUrl) return;
-    // requestIdleCallback: solo cuando el navegador esté libre
-    const id = (window.requestIdleCallback ?? setTimeout)(() => {
-      if (Hls.isSupported() && !hlsCache.has(nextUrl)) {
-        const hls = new Hls({
-          enableWorker: true,
-          maxBufferLength: 4,
-          startLevel: -1,
-          autoStartLoad: false, // carga el manifiesto pero no los segmentos
-        });
-        hls.loadSource(nextUrl);
-        hlsCache.set(nextUrl, hls);
-      }
-    }, { timeout: 2000 });
-
-    return () => (window.cancelIdleCallback ?? clearTimeout)(id as number);
-  }, [nextUrl, currentUrl]);
 
   const isAactive = active === "A";
 
