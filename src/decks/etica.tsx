@@ -2,6 +2,7 @@
 import { Deck, Slide, TitleSlide, Callout, Checks, Flow, Item, Wordmark } from "../deck";
 import { Icon } from "../icons";
 import Button from "@/concorde/components/Button";
+import "./pbr-bg.css";
 
 export default function EticaDeck() {
   return (

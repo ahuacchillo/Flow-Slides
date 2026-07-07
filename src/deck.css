@@ -49,18 +49,23 @@
   background: linear-gradient(180deg, rgba(10, 7, 17, 0.4), rgba(10, 7, 17, 0.12) 40%, rgba(10, 7, 17, 0.5));
 }
 
-/* ── Grade Concorde — SOLO deck "fondo" (no toca ética) ──────────────────── */
-[data-deck="fondo"] .video-bg video {
+}
+
+/* ── Grade Concorde — Decks "fondo" y "etica" ────────────────────────────── */
+[data-deck="fondo"] .video-bg video,
+[data-deck="etica"] .video-bg video {
   filter: saturate(0.85) contrast(1.08) brightness(0.88);
 }
-[data-deck="fondo"] .video-veil {
+[data-deck="fondo"] .video-veil,
+[data-deck="etica"] .video-veil {
   background:
     /* bruma lila: levanta los negros para quitar el gloss plástico */
     linear-gradient(160deg, rgba(207, 186, 255, 0.07), rgba(174, 142, 255, 0.04) 50%, rgba(251, 196, 125, 0.05)),
     linear-gradient(180deg, rgba(10, 7, 17, 0.55), rgba(10, 7, 17, 0.28) 40%, rgba(10, 7, 17, 0.62));
 }
 /* Grade de color: hue/sat de la paleta Concorde, luminancia del video */
-[data-deck="fondo"] .video-veil::before {
+[data-deck="fondo"] .video-veil::before,
+[data-deck="etica"] .video-veil::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -76,7 +81,8 @@
   mix-blend-mode: color;
 }
 /* Luz y profundidad: brillos lila, calor ámbar y viñeta suave */
-[data-deck="fondo"] .video-veil::after {
+[data-deck="fondo"] .video-veil::after,
+[data-deck="etica"] .video-veil::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -87,7 +93,8 @@
   mix-blend-mode: soft-light;
 }
 /* Vidrio más suave para este deck: menos blur, relieve más discreto */
-[data-deck="fondo"] .glass {
+[data-deck="fondo"] .glass,
+[data-deck="etica"] .glass {
   border-color: rgba(255, 255, 255, 0.09);
   background: linear-gradient(150deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012) 45%, transparent);
   -webkit-backdrop-filter: blur(5px) saturate(118%);

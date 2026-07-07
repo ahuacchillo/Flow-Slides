@@ -26,7 +26,8 @@
 
 /* ── Tokens PBR (variables de iluminación y sombra) ─────────────────────── */
 
-[data-deck="fondo"] {
+[data-deck="fondo"],
+[data-deck="etica"] {
   --pbr-ior:         1.45;
   --pbr-f0:          0.034;
   --pbr-roughness:   0.18;
@@ -91,13 +92,16 @@
   100% { transform: translate(-14.0vmax, -6.0vmax)      scale(0.85); }
 }
 
-[data-deck="fondo"] .blobs i:nth-child(1) {
+[data-deck="fondo"] .blobs i:nth-child(1),
+[data-deck="etica"] .blobs i:nth-child(1) {
   animation: blob-spring-a 22s cubic-bezier(0.23, 1.32, 0.42, 0.98) infinite alternate;
 }
-[data-deck="fondo"] .blobs i:nth-child(2) {
+[data-deck="fondo"] .blobs i:nth-child(2),
+[data-deck="etica"] .blobs i:nth-child(2) {
   animation: blob-spring-b 28s cubic-bezier(0.23, 1.32, 0.42, 0.98) infinite alternate;
 }
-[data-deck="fondo"] .blobs i:nth-child(3) {
+[data-deck="fondo"] .blobs i:nth-child(3),
+[data-deck="etica"] .blobs i:nth-child(3) {
   animation: blob-spring-c 36s cubic-bezier(0.23, 1.32, 0.42, 0.98) infinite alternate;
 }
 
@@ -111,12 +115,14 @@
  * z-index: 3 → sobre el ::before/.video-veil original, bajo .blobs
  */
 
-[data-deck="fondo"] .video-bg {
+[data-deck="fondo"] .video-bg,
+[data-deck="etica"] .video-bg {
   z-index: 0;  /* asegurar orden de capas */
 }
 
 /* Lóbulo especular GGX + Fresnel rimlight + SSS capa superficial + media */
-[data-deck="fondo"] .video-bg::after {
+[data-deck="fondo"] .video-bg::after,
+[data-deck="etica"] .video-bg::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -197,7 +203,8 @@
  * sobre el .video-bg directamente (usando pointer-events:none + z-index)
  * para no interferir con el sistema de veil ya calibrado.
  */
-[data-deck="fondo"] .blobs {
+[data-deck="fondo"] .blobs,
+[data-deck="etica"] .blobs {
   /* blobs sobre la capa PBR → z-index igual al original pero explícito */
   z-index: 4;
   position: absolute;
@@ -207,9 +214,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   [data-deck="fondo"] .blobs i:nth-child(1),
+  [data-deck="etica"] .blobs i:nth-child(1),
   [data-deck="fondo"] .blobs i:nth-child(2),
+  [data-deck="etica"] .blobs i:nth-child(2),
   [data-deck="fondo"] .blobs i:nth-child(3),
-  [data-deck="fondo"] .video-bg::after {
+  [data-deck="etica"] .blobs i:nth-child(3),
+  [data-deck="fondo"] .video-bg::after,
+  [data-deck="etica"] .video-bg::after {
     animation: none !important;
   }
 }
