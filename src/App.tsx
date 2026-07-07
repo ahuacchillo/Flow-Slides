@@ -15,8 +15,8 @@ const DECKS = [
   {
     id: "fondo",
     title: "Fondos flow³",
-    desc: "Catálogo de los 6 sistemas de background disponibles: grade PBR, gradiente base, blobs drift, blobs spring physics, video ambiente y video raw.",
-    count: 6,
+    desc: "Los 5 videos únicos del sistema flow³: portada, filosofía, Phi, Fibonacci y tipografía √φ.",
+    count: 5,
     Component: FondoDeck,
   },
   // ponytail: nueva presentación = nuevo archivo en src/decks/ + una entrada aquí

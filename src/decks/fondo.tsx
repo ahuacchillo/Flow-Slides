@@ -1,64 +1,99 @@
-// fondo.tsx — Catálogo de fondos del sistema flow³
-// Cada slide muestra un fondo diferente disponible para usar en presentaciones.
-// El Deck usa el video principal (4IMYGcL...) como base — cada slide
-// agrega su propia capa de estilo via data-slide-bg en el wrapper.
-import { useEffect, useRef } from "react";
-import { Deck, VideoBackground, Wordmark } from "../deck";
+// fondo.tsx — Catálogo de fondos de video flow³
+// 5 videos únicos extraídos de flow³-presentation/src/App.tsx
+// Cada slide muestra el video en loop con su descripción de uso original.
+import { Deck, VideoBackground } from "../deck";
 import "./pbr-bg.css";
 import "./fondo-slides.css";
 
-// ── Utilidad: Slide de catálogo ─────────────────────────────────────────────
-// Cada slide es un <div> con un data-bg que el CSS usa para aplicar
-// el fondo correspondiente encima del escenario base.
+// ── Catálogo de videos flow³ ─────────────────────────────────────────────────
+// Extraído de flow³-presentation/src/App.tsx slideData[].video
+// Cada URL aparece múltiples veces en la presentación original; aquí se
+// documenta el slide donde debuta (primer uso) y los temas asociados.
 
-function BgSlide({
-  bg,
-  label,
-  tag,
-  children,
+const VIDEOS = [
+  {
+    id: "V1",
+    url: "https://stream.mux.com/JNJEOYI6B3EffB9f5ZhpGbuxzc6gSyJcXaCBbCgZKRg.m3u8",
+    label: "Portada · FLOW³",
+    desc: "Cover slide y temas de Color (OKLCH), Taxonomía y Sub-agent Hierarchy.",
+    uses: ["Cover", "Color", "Species", "Agents"],
+  },
+  {
+    id: "V2",
+    url: "https://stream.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo.m3u8",
+    label: "The Why · Filosofía",
+    desc: "Chapter 0: Why a New Universe + Physics (Radius & Depth) + Docs + Tools.",
+    uses: ["The Why", "Physics", "Component Anatomy", "The Body Parts"],
+  },
+  {
+    id: "V3",
+    url: "https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8",
+    label: "Phi (φ) · Constante",
+    desc: "Chapter 1: The Constant (1.618) + Ideas Rechazadas + Senescence + Workflow.",
+    uses: ["Phi 1.618", "Cemetery", "Lifecycle", "Workflow"],
+  },
+  {
+    id: "V4",
+    url: "https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8",
+    label: "Fibonacci · Spacing",
+    desc: "Fibonacci Spacing + Token Layers + 7 Laws of Physics + Evolution Roadmap.",
+    uses: ["Spacing", "Tokens", "7 Laws", "Roadmap"],
+  },
+  {
+    id: "V5",
+    url: "https://stream.mux.com/00qQnfNo7sSpn3pB1hYKkyeSDvxs01NxiQ3sr29uL3e028.m3u8",
+    label: "√φ · Tipografía",
+    desc: "Root Phi (√φ=1.272) Typography + Kits (α β γ δ ε) + AI Stack + Cierre Biomimesis.",
+    uses: ["Typography", "Kits", "AI Stack", "Biomimesis"],
+  },
+] as const;
+
+// ── Slide de video individual ─────────────────────────────────────────────────
+
+function VideoSlide({
+  video,
+  index,
 }: {
-  bg: string;
-  label: string;
-  tag: string;
-  children?: React.ReactNode;
+  video: (typeof VIDEOS)[number];
+  index: number;
 }) {
   return (
-    <div className="bg-slide" data-bg={bg}>
-      <div className="bg-label">
-        <span className="bg-tag">{tag}</span>
-        <strong>{label}</strong>
-      </div>
-      {children}
-    </div>
-  );
-}
+    <div className="bg-slide" data-bg="video-catalog">
+      {/* Video propio por slide — cada uno es independiente */}
+      <VideoBackground src={video.url} />
 
-// ── Slide 5: Video ambiente (segundo stream) ─────────────────────────────────
-// Necesita montar su propio VideoBackground porque el Deck solo soporta uno.
-function AmbientVideoSlide() {
-  return (
-    <div className="bg-slide" data-bg="ambient-video">
-      <VideoBackground src="https://stream.mux.com/fHfa8VIbBdqZelLGg5thjsypZ101M01dbyIMLNDWQwlLA.m3u8" />
-      <div className="ambient-veil" aria-hidden />
-      <div className="bg-label">
-        <span className="bg-tag">flow³ · 05</span>
-        <strong>Video ambiente puro</strong>
-      </div>
-    </div>
-  );
-}
+      {/* Overlay neutro para legibilidad */}
+      <div className="vc-veil" aria-hidden />
 
-// ── Slide con contenido de título ───────────────────────────────────────────
-function TitleContent() {
-  return (
-    <div className="fondo-title-content">
-      <span className="fondo-eyebrow">flow³ · fondos</span>
-      <h1>
-        Catálogo de<br />
-        <span className="accent">fondos disponibles</span>
-      </h1>
-      <p>Todos los sistemas de background del motor flow³.<br />Navega con ← → para comparar.</p>
-      <Wordmark />
+      {/* Número grande de fondo */}
+      <span className="vc-ghost" aria-hidden>
+        {video.id}
+      </span>
+
+      {/* Contenido centrado */}
+      <div className="vc-content">
+        <span className="fondo-eyebrow">flow³ · {String(index + 1).padStart(2, "0")} / 05</span>
+        <h1 className="vc-title">{video.label}</h1>
+        <p className="vc-desc">{video.desc}</p>
+
+        {/* Chips de usos */}
+        <div className="vc-chips">
+          {video.uses.map((u) => (
+            <span key={u} className="vc-chip">{u}</span>
+          ))}
+        </div>
+
+        {/* URL recortada para referencia */}
+        <code className="vc-url">
+          {video.url.replace("https://stream.mux.com/", "mux › ").replace(".m3u8", "")}
+        </code>
+      </div>
+
+      {/* Label de esquina */}
+      <div className="bg-label">
+        <span className="bg-tag">flow³ · video {video.id}</span>
+        <strong>{video.label}</strong>
+      </div>
     </div>
   );
 }
@@ -66,68 +101,13 @@ function TitleContent() {
 // ── Deck principal ───────────────────────────────────────────────────────────
 
 export default function FondoDeck() {
+  // El Deck no monta su propio video — cada slide tiene el suyo.
+  // Pasamos undefined para que no haya video base duplicado.
   return (
-    <Deck
-      id="fondo"
-      video="https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8"
-    >
-
-      {/* ── 01: Grade Concorde + PBR ─────────────────────────────────────── */}
-      {/* El fondo por defecto del deck fondo: grade de color Concorde
-          con especular GGX + SSS + spring physics en blobs */}
-      <BgSlide bg="pbr-grade" tag="flow³ · 01" label="Grade Concorde + PBR">
-        <TitleContent />
-      </BgSlide>
-
-      {/* ── 02: Solo gradiente base (sin video) ──────────────────────────── */}
-      {/* El gradiente radial estático definido en .deck —
-          el fondo más limpio y ligero del sistema */}
-      <BgSlide bg="base-gradient" tag="flow³ · 02" label="Gradiente base estático">
-        <div className="fondo-title-content">
-          <span className="fondo-eyebrow">flow³ · base</span>
-          <h1>Gradiente<br /><span className="accent">estático</span></h1>
-          <p>El fondo base del sistema.<br />Sin video, sin blobs. Máximo rendimiento.</p>
-        </div>
-      </BgSlide>
-
-      {/* ── 03: Blobs líquidos sin video ─────────────────────────────────── */}
-      {/* Solo los blobs difuminados sobre el gradiente base —
-          animación drift-a/b/c original del sistema */}
-      <BgSlide bg="blobs-only" tag="flow³ · 03" label="Blobs líquidos (drift)">
-        <div className="fondo-title-content">
-          <span className="fondo-eyebrow">flow³ · liquid</span>
-          <h1>Blobs<br /><span className="accent">líquidos</span></h1>
-          <p>Blobs con animación ease-in-out.<br />Ligero, sin video HLS.</p>
-        </div>
-      </BgSlide>
-
-      {/* ── 04: Blobs con Spring Physics PBR ────────────────────────────── */}
-      {/* Los blobs con las keyframes de spring underdamped (ζ=0.35)
-          que implementamos — sin video, máximo impacto animado */}
-      <BgSlide bg="blobs-spring" tag="flow³ · 04" label="Blobs Spring Physics (ζ=0.35)">
-        <div className="fondo-title-content">
-          <span className="fondo-eyebrow">flow³ · spring PBR</span>
-          <h1>Spring<br /><span className="accent">Physics</span></h1>
-          <p>Masa diferenciada por blob (m=1.0/1.6/2.4).<br />Movimiento inercial underdamped.</p>
-        </div>
-      </BgSlide>
-
-      {/* ── 05: Video ambiente puro ──────────────────────────────────────── */}
-      {/* El segundo video Mux (loop ambiente) sin grade de color —
-          solo el veil base para legibilidad */}
-      <AmbientVideoSlide />
-
-      {/* ── 06: Video principal + solo veil (sin grade de color) ─────────── */}
-      {/* El video original del deck fondo con el veil mínimo —
-          sin el grade Concorde. Más cinematográfico, menos de marca. */}
-      <BgSlide bg="video-raw" tag="flow³ · 06" label="Video + veil mínimo">
-        <div className="fondo-title-content">
-          <span className="fondo-eyebrow">flow³ · video raw</span>
-          <h1>Video<br /><span className="accent">+ veil mínimo</span></h1>
-          <p>Sin grade de color.<br />Cinematográfico, neutro en hue.</p>
-        </div>
-      </BgSlide>
-
+    <Deck id="fondo">
+      {VIDEOS.map((v, i) => (
+        <VideoSlide key={v.id} video={v} index={i} />
+      ))}
     </Deck>
   );
 }

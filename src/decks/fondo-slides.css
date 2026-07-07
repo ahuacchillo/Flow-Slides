@@ -182,3 +182,105 @@
     );
   z-index: 1;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CATÁLOGO DE VIDEOS FLOW³ — [data-bg="video-catalog"]
+   Cada slide monta su propio VideoBackground.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Veil neutro sobre el video — sin grade de color, máxima legibilidad */
+.vc-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(5, 2, 15, 0.55)   0%,
+      rgba(5, 2, 15, 0.10)  40%,
+      rgba(5, 2, 15, 0.65) 100%
+    ),
+    linear-gradient(90deg,
+      rgba(5, 2, 15, 0.45)   0%,
+      transparent            50%,
+      rgba(5, 2, 15, 0.20) 100%
+    );
+  z-index: 1;
+}
+
+/* Número ID gigante de fondo (V1–V5) */
+.vc-ghost {
+  position: absolute;
+  bottom: -0.1em;
+  right: 0.04em;
+  font-size: clamp(14rem, 40vmin, 30rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(174, 142, 255, 0.10);
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+}
+
+/* Contenido centrado del catálogo */
+.vc-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: clamp(12px, 2vmin, 22px);
+  /* padding-bottom deja espacio al bg-label anclado abajo */
+  padding: clamp(32px, 5vmin, 72px) clamp(48px, 10vmin, 160px) clamp(120px, 18vmin, 200px);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.vc-title {
+  margin: 0;
+  font-size: clamp(2.4rem, 6.5vmin, 5rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--text);
+}
+
+.vc-desc {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: clamp(0.88rem, 1.8vmin, 1.08rem);
+  line-height: 1.6;
+  max-width: 56ch;
+}
+
+/* Chips de usos */
+.vc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.vc-chip {
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(174, 142, 255, 0.28);
+  background: rgba(174, 142, 255, 0.08);
+  font-size: clamp(10px, 1.1vmin, 12px);
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--lilac-soft);
+}
+
+/* URL de referencia */
+.vc-url {
+  font-family: ui-monospace, monospace;
+  font-size: clamp(10px, 1.1vmin, 12px);
+  color: rgba(255, 255, 255, 0.28);
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+  word-break: break-all;
+}
