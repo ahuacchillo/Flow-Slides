@@ -16,7 +16,7 @@ const DECKS = [
     id: "fondo",
     title: "Fondo flagship PBR",
     desc: "Material viscoelástico simulado con PBR: BSSRDF (dispersión subsuperficial), efecto Fresnel Schlick y blobs con Spring Physics (ζ=0.35).",
-    count: 1,
+    count: 2,
     Component: FondoDeck,
   },
 ];
