@@ -332,6 +332,7 @@ export default function FondoDeck() {
       <div
         className="fondo-shared-player-root"
         aria-hidden
+        data-deck="fondo"
         data-active-slide={activeIdx}
       >
         <SharedVideoPlayer currentUrl={currentUrl} nextUrl={nextUrl} />

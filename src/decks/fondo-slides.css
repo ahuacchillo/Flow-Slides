@@ -17,9 +17,18 @@
   /* Solo visible cuando el deck fondo está activo */
   display: none;
 }
-/* Se activa cuando el data-deck="fondo" existe en el DOM */
+/* Se activa cuando el data-deck="fondo" existe en el DOM y hereda el fondo original de .deck */
 body:has([data-deck="fondo"]) .fondo-shared-player-root {
   display: block;
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(59, 23, 130, 0.4) 0%, transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(35, 9, 79, 0.45) 0%, transparent 55%),
+    var(--ink, #0a0711);
+}
+
+/* Hacer transparente el deck para revelar el reproductor y background de atrás */
+[data-deck="fondo"] {
+  background: transparent !important;
 }
 
 /* El player hereda los estilos de .video-bg del deck */
