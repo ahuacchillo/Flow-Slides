@@ -14,9 +14,9 @@ const DECKS = [
   },
   {
     id: "fondo",
-    title: "Fondo",
-    desc: "Background líquido con grade Concorde y slide glass de ejemplo.",
-    count: 1,
+    title: "Fondos flow³",
+    desc: "Catálogo de los 6 sistemas de background disponibles: grade PBR, gradiente base, blobs drift, blobs spring physics, video ambiente y video raw.",
+    count: 6,
     Component: FondoDeck,
   },
   // ponytail: nueva presentación = nuevo archivo en src/decks/ + una entrada aquí
