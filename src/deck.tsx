@@ -1,5 +1,5 @@
 // deck.tsx — motor de presentaciones Subastop (liquid glass + Concorde)
-import { Children, useCallback, useEffect, useRef, useState } from "react";
+import { Children, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Hls from "hls.js";
 import "./deck.css";
@@ -31,6 +31,89 @@ export function VideoBackground({ src }: { src: string }) {
   );
 }
 
+// ── Voiceover engine ───────────────────────────────────────────────────────
+
+type VoiceoverConfig = {
+  /** Base path for audio files, e.g. "/audio/slide" → loads /audio/slide-01.mp3 */
+  basePath: string;
+  /** Total number of slides */
+  total: number;
+  /** Currently active slide index (0-based) */
+  current: number;
+  /** Called when audio ends — use for auto-advance */
+  onEnded?: () => void;
+};
+
+function useVoiceover({ basePath, total, current, onEnded }: VoiceoverConfig) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [muted, setMuted] = useState(() => sessionStorage.getItem("vo-muted") === "1");
+  const [playing, setPlaying] = useState(false);
+
+  // Preload audio sources
+  const sources = useMemo(() => {
+    return Array.from({ length: total }, (_, k) => {
+      return `${basePath}${k + 1}.mp3`;
+    });
+  }, [basePath, total]);
+
+  // Persist mute preference
+  useEffect(() => {
+    sessionStorage.setItem("vo-muted", muted ? "1" : "0");
+  }, [muted]);
+
+  // Play/stop on slide change
+  useEffect(() => {
+    const prev = audioRef.current;
+    if (prev) {
+      prev.pause();
+      prev.removeAttribute("src");
+      prev.load();
+    }
+
+    const audio = new Audio(sources[current]);
+    audio.preload = "auto";
+    audio.muted = muted;
+    audioRef.current = audio;
+
+    const handlePlay = () => setPlaying(true);
+    const handlePause = () => setPlaying(false);
+    const handleEnded = () => {
+      setPlaying(false);
+      onEnded?.();
+    };
+    const handleError = () => setPlaying(false);
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
+
+    // Small delay so the slide transition starts before audio
+    const t = setTimeout(() => {
+      audio.play().catch(() => {});
+    }, 400);
+
+    return () => {
+      clearTimeout(t);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
+      audio.pause();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, sources]);
+
+  // Sync muted state to current audio
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted;
+  }, [muted]);
+
+  const toggle = useCallback(() => setMuted((m) => !m), []);
+
+  return { muted, playing, toggle };
+}
+
 // ── Motivos gráficos ───────────────────────────────────────────────────────
 
 /** Bracket redondeado del wordmark VMC:  >  o  < */
@@ -56,7 +139,7 @@ export function Chev({ left = false }: { left?: boolean }) {
 
 // ── Engine ─────────────────────────────────────────────────────────────────
 
-export function Deck({ id, video, children }: { id: string; video?: string; children: ReactNode }) {
+export function Deck({ id, video, voiceover, autoAdvance, children }: { id: string; video?: string; voiceover?: string; autoAdvance?: boolean; children: ReactNode }) {
   const slides = Children.toArray(children);
   const n = slides.length;
   const [i, setI] = useState(() => {
@@ -70,6 +153,14 @@ export function Deck({ id, video, children }: { id: string; video?: string; chil
     [n],
   );
 
+  // ── Voiceover ──
+  const vo = useVoiceover({
+    basePath: voiceover ?? `/audio/slide`,
+    total: n,
+    current: i,
+    onEnded: autoAdvance ? () => go(1) : undefined,
+  });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) go(1);
@@ -80,12 +171,13 @@ export function Deck({ id, video, children }: { id: string; video?: string; chil
         if (document.fullscreenElement) void document.exitFullscreen();
         else void document.documentElement.requestFullscreen();
       }
+      else if (e.key === "m" || e.key === "M") vo.toggle();
       else return;
       e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, n]);
+  }, [go, n, vo.toggle]);
 
   useEffect(() => {
     window.history.replaceState(null, "", `#/${id}/${i + 1}`);
@@ -140,6 +232,28 @@ export function Deck({ id, video, children }: { id: string; video?: string; chil
           </button>
           <button onClick={() => go(-1)} disabled={i === 0} aria-label="Anterior">‹</button>
           <button onClick={() => go(1)} disabled={i === n - 1} aria-label="Siguiente">›</button>
+          <button
+            onClick={vo.toggle}
+            aria-label={vo.muted ? "Activar audio" : "Silenciar audio"}
+            title={vo.muted ? "Activar voz en off (M)" : "Silenciar voz en off (M)"}
+            className={vo.playing && !vo.muted ? "vo-active" : ""}
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              {vo.muted ? (
+                <>
+                  <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </>
+              ) : (
+                <>
+                  <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                  <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                  <path d="M19 5a9 9 0 0 1 0 14" />
+                </>
+              )}
+            </svg>
+          </button>
           <button
             onClick={() =>
               document.fullscreenElement

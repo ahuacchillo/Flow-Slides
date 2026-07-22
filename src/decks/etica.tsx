@@ -7,100 +7,108 @@ import "./pbr-bg.css";
 export default function EticaDeck() {
   return (
     <Deck id="etica" video="https://stream.mux.com/4IMYGcL01xjs7ek5ANO17JC4VQVUTsojZlnw4fXzwSxc.m3u8">
-      {/* 01 */}
+      {/* 01 — La confianza se construye todos los días */}
       <TitleSlide
         num="01"
         title={<>La confianza se construye <span className="accent">todos los días</span></>}
       >
-        <p>En Subastop, la ética no es solo una política.</p>
-        <p>Es la forma en que trabajamos.<br />Es la forma en que construimos confianza.</p>
+        <p>Cada decisión que tomamos deja una huella.</p>
+        <div className="icon-grid center-items">
+          <Item icon="people" title="Clientes" />
+          <Item icon="user" title="Compañeros" />
+          <Item icon="shield" title="Socios estratégicos" />
+          <Item icon="star" title="Nuestra reputación" />
+        </div>
+        <Callout>La ética no es solo una política, es nuestra forma de trabajar.</Callout>
         <Wordmark />
       </TitleSlide>
 
-      {/* 02 */}
-      <Slide num="02" title={<>¿Qué significa actuar con <span className="accent">integridad</span>?</>} lead="Es hacer lo correcto incluso cuando nadie nos está observando.">
+      {/* 02 — ¿Qué significa actuar con integridad? */}
+      <Slide num="02" title={<>¿Qué significa actuar con <span className="accent">integridad</span>?</>} lead="Hacer lo correcto, incluso cuando nadie nos observa.">
         <div className="icon-grid center-items">
-          <Item icon="shield" title="Honestidad">Decimos la verdad y actuamos con coherencia.</Item>
-          <Item icon="user" title="Responsabilidad">Asumimos las consecuencias de nuestras acciones.</Item>
-          <Item icon="target" title="Profesionalismo">Mantenemos los más altos estándares de conducta en todo momento.</Item>
-          <Item icon="check" title="Confianza">Nuestras acciones generan credibilidad y fortalecen nuestra reputación.</Item>
+          <Item icon="shield" title="Honestidad absoluta">Actuar con absoluta honestidad en todo momento.</Item>
+          <Item icon="user" title="Responsabilidad">Asumir la responsabilidad de nuestras decisiones.</Item>
+          <Item icon="target" title="Estándares de conducta">Mantener los más altos estándares de conducta profesional.</Item>
         </div>
       </Slide>
 
-      {/* 03 */}
-      <Slide num="03" title={<>Nuestra <span className="accent">cultura</span></>} lead="Promovemos una cultura basada en principios que impulsan nuestro crecimiento y fortalecen a nuestro equipo.">
+      {/* 03 — Nuestra Cultura Subastop */}
+      <Slide num="03" title={<>Nuestra Cultura <span className="accent">Subastop</span></>} lead="Nuestros principios se reflejan en cada decisión que tomamos.">
         <div className="icon-grid center-items">
-          <Item icon="star" title="Excelencia e innovación" />
-          <Item icon="bulb" title="Curiosidad y disrupción" />
-          <Item icon="mountain" title="Ambición con propósito" />
-          <Item icon="trend" title="Mejora continua" />
-          <Item icon="people" title="Compromiso con los citizens" />
+          <Item icon="star" title="Excelencia" />
+          <Item icon="bulb" title="Innovación" />
+          <Item icon="shield" title="Responsabilidad" />
+          <Item icon="heart" title="Compromiso" />
         </div>
+        <Callout>Valoramos personas que cuestionan, proponen, mejoran y actúan con coherencia.</Callout>
       </Slide>
 
-      {/* 04 */}
-      <Slide num="04" title={<>Todos tenemos una <span className="accent">responsabilidad</span></>} lead="Cada colaborador es clave para construir un entorno ético, seguro y confiable.">
+      {/* 04 — Todos tenemos una responsabilidad */}
+      <Slide num="04" title={<>Todos tenemos una <span className="accent">responsabilidad</span></>} lead="La ética nos involucra a todos, sin excepciones.">
         <Checks
           items={[
-            "Actuar con integridad y respeto",
-            "Cumplir nuestras políticas y procedimientos",
-            "Proteger la información y los recursos",
-            "Reportar situaciones de riesgo",
-            "Promover un ambiente de confianza y colaboración",
+            "Actuar de forma profesional.",
+            "Proteger la información.",
+            "Cumplir nuestras políticas internas.",
+            "Fomentar un entorno de respeto y confianza.",
           ]}
         />
       </Slide>
 
-      {/* 05 */}
-      <Slide num="05" title={<>Riesgos que debemos <span className="accent">prevenir</span></>} lead="Identificamos riesgos que pueden afectar nuestra integridad, reputación y sostenibilidad.">
+      {/* 05 — Riesgos que debemos prevenir */}
+      <Slide num="05" title={<>Riesgos que debemos <span className="accent">prevenir</span></>}>
         <div className="card-grid">
-          <Item icon="people" title="Conflictos de interés">Pueden afectar nuestra objetividad y nuestras decisiones.</Item>
-          <Item icon="mask" title="Fraude">Puede generar pérdidas económicas y dañar nuestra reputación.</Item>
-          <Item icon="doc" title="Uso indebido de información">La información confidencial debe usarse solo para fines autorizados.</Item>
-          <Item icon="sliders" title="Manipulación de procesos">Afecta la transparencia y la equidad en nuestras operaciones.</Item>
-          <Item icon="lock" title="Accesos no autorizados">Pueden comprometer la seguridad de la información.</Item>
-          <Item icon="gavel" title="Incumplimientos regulatorios">Pueden generar consecuencias legales y reputacionales.</Item>
+          <Item icon="people" title="Conflictos de interés" />
+          <Item icon="mask" title="Fraude" />
+          <Item icon="doc" title="Uso indebido de la información" />
+          <Item icon="sliders" title="Manipulación de procesos" />
+          <Item icon="lock" title="Accesos no autorizados" />
+          <Item icon="gavel" title="Incumplimientos regulatorios" />
         </div>
       </Slide>
 
-      {/* 06 */}
-      <Slide num="06" title={<>Las decisiones <span className="accent">importan</span></>} lead="Situaciones simples pueden tener grandes consecuencias.">
+      {/* 06 — Las decisiones importan */}
+      <Slide num="06" title={<>Las decisiones <span className="accent">importan</span></>} lead="Las decisiones pequeñas pueden generar grandes consecuencias.">
         <div className="glass qcard">
           <span className="ic"><Icon name="question" size={40} /></span>
           <div>
-            <h3>¿Qué harías en esta situación?</h3>
-            <p>Un proveedor te ofrece un beneficio personal durante una negociación.</p>
+            <h3>Situaciones cotidianas de riesgo</h3>
+            <Checks
+              items={[
+                "Beneficios ofrecidos por proveedores.",
+                "Manejo de información sensible.",
+                "Falta de transparencia en procesos.",
+              ]}
+            />
           </div>
         </div>
-        <p>Actuar con criterio y objetividad protege nuestra integridad y la de nuestra organización.</p>
+        <Callout>Claves para actuar: Criterio, objetividad y responsabilidad.</Callout>
       </Slide>
 
-      {/* 07 */}
-      <Slide num="07" title={<>Integridad, <span className="accent">anticorrupción</span> y <span className="accent">antisoborno</span></>} lead="En Subastop tenemos tolerancia cero frente a cualquier práctica indebida.">
+      {/* 07 — Integridad y anticorrupción */}
+      <Slide num="07" title={<>Integridad y <span className="accent">anticorrupción</span></>} lead="Política de Tolerancia Cero frente al fraude y la corrupción.">
         <Checks
           items={[
-            "No ofrecemos ni aceptamos beneficios indebidos.",
-            "No realizamos pagos de facilitación.",
-            "No participamos en actos de corrupción, fraude o soborno.",
-            "Actuamos siempre en beneficio de la organización y nuestros grupos de interés.",
+            "No aceptamos beneficios que influyan en nuestras decisiones.",
+            "Garantizamos la imparcialidad en todas nuestras operaciones.",
+            "Actuamos siempre en beneficio de Subastop.",
           ]}
         />
       </Slide>
 
-      {/* 08 */}
-      <Slide num="08" title={<>La información también debe <span className="accent">protegerse</span></>} lead="La información es un activo estratégico.">
+      {/* 08 — Protección de la información */}
+      <Slide num="08" title={<>Protección de la <span className="accent">información</span></>} lead="La información es uno de nuestros activos más valiosos.">
         <Checks
           items={[
-            "Úsala solo para fines autorizados.",
-            "Respeta la confidencialidad.",
-            "Evita accesos, usos o divulgaciones no autorizadas.",
-            "Reporta cualquier incidente de seguridad.",
+            "Exclusivo para fines autorizados.",
+            "Respeto absoluto a la confidencialidad.",
+            "Prevención de accesos y divulgaciones no autorizadas.",
           ]}
         />
       </Slide>
 
-      {/* 09 */}
-      <Slide num="09" title={<>Canal <span className="accent">Ético</span></>} lead="Si identificas una situación contraria a nuestros principios o políticas, repórtala.">
+      {/* 09 — Canal Ético */}
+      <Slide num="09" title={<>Canal <span className="accent">Ético</span></>} lead="Herramienta para reportar situaciones contrarias a nuestros principios y normativas.">
         <Flow
           steps={[
             { icon: "alert", label: "Identifica la situación" },
@@ -109,33 +117,35 @@ export default function EticaDeck() {
             { icon: "check", label: "Tomamos acciones y damos seguimiento" },
           ]}
         />
-        <Callout>Hablar también es actuar con integridad.</Callout>
+        <p>Mecanismo seguro, responsable y confidencial.</p>
+        <Callout>Hablar y reportar también es actuar con integridad.</Callout>
       </Slide>
 
-      {/* 10 */}
-      <Slide num="10" title={<>Confidencialidad y <span className="accent">no represalias</span></>} lead="Tu reporte estará siempre protegido.">
+      {/* 10 — Confidencialidad y cero represalias */}
+      <Slide num="10" title={<>Confidencialidad y <span className="accent">cero represalias</span></>}>
         <div className="icon-grid center-items">
-          <Item icon="lock" title="Confidencialidad">Tu identidad será protegida.</Item>
-          <Item icon="scale" title="Imparcialidad">Investigaremos de manera objetiva y responsable.</Item>
-          <Item icon="people" title="No represalias">Nadie que reporte de buena fe será objeto de represalias.</Item>
+          <Item icon="scale" title="Imparcialidad">Tratamiento objetivo e imparcial de todos los reportes.</Item>
+          <Item icon="shield" title="Garantía">Garantía de NO represalias para quienes reportan de buena fe.</Item>
+          <Item icon="lock" title="Protección total">Protección total para fortalecer nuestra cultura ética.</Item>
         </div>
       </Slide>
 
-      {/* 11 */}
-      <Slide num="11" title={<>Nuestro <span className="accent">compromiso</span></>} lead="La ética no se demuestra con palabras, se demuestra con decisiones.">
+      {/* 11 — Nuestro compromiso */}
+      <Slide num="11" title={<>Nuestro <span className="accent">compromiso</span></>} lead="La ética se demuestra con decisiones y acciones diarias, no solo con palabras.">
         <div className="icon-grid center-items">
-          <Item icon="heart" title="">Actuamos con integridad en cada decisión.</Item>
-          <Item icon="people" title="">Protegemos nuestra reputación y la confianza que depositan en nosotros.</Item>
-          <Item icon="trend" title="">Construimos juntos una Subastop más fuerte y sostenible.</Item>
+          <Item icon="heart" title="">Todos tenemos un rol fundamental.</Item>
+          <Item icon="shield" title="">Protegemos nuestros valores, nuestra reputación y nuestro futuro.</Item>
         </div>
       </Slide>
 
-      {/* 12 */}
+      {/* 12 — ¡Gracias! */}
       <TitleSlide
         num="12"
-        title={<><span className="accent">Gracias</span> por ser parte de nuestra cultura ética</>}
+        title={<><span className="accent">¡Gracias!</span></>}
       >
-        <p>Juntos construimos confianza, integridad y un futuro sostenible.</p>
+        <p>Gracias por ser parte de Subastop.</p>
+        <p>Sigamos fortaleciendo nuestra organización a través de la integridad.</p>
+        <Callout>Juntos construimos un futuro sostenible.</Callout>
         <Wordmark />
         <Button
           variant="primary"
